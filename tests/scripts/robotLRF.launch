@@ -1,0 +1,19 @@
+<launch>
+
+<arg name='config_path' default='$(find tests)/config/MultiLRF.rviz'/>
+
+
+  <!-- TF between the robot and the laser base -->
+  <node  name="tf_static" pkg="tf" type="static_transform_publisher" args="0.08 0 0 0 0 0 /base_link /laser 1" />
+  
+<node name="Rosaria" pkg="rosaria" type="RosAria" respawn="true" />
+<node name="turtlebot" pkg='turtlebot_teleop' type='turtlebot_teleop_key' output='screen'>
+  <!--topic names are different with rosrun node, use topic list to check the real name-->
+  <remap from='turtlebot/cmd_vel' to='/Rosaria/cmd_vel' />
+</node>
+<node name='urg_node' pkg='urg_node' type='urg_node' >
+  <param name='ip_address' type='string' value='66.88.0.11' />
+</node>
+<node name='rviz' pkg='rviz' type='rviz' args='-d $(arg config_path)'/>
+
+</launch>

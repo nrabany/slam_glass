@@ -1,0 +1,17 @@
+<!--Run rosbag including gmapping, and removeLRF noise node to see the experiments' results-->
+
+<launch>
+  <param name="use_sim_time" value="true"/>
+  <arg name="bag_path"  default="/home/jiang/Desktop/GlassMap(2017-06-20)/bags/"/>
+  <arg name="config_path"  default="$(find tests)/config/gmapping.rviz"/>
+  <arg name="bag_name"  default="B2F1GlassPart"/>   <!--Change bag name here-->
+  <arg name="rosbag_rate"  default="1" />  
+  
+    <!-- Playback rosbag -->
+  <node name="player" pkg="rosbag" type="play" output="screen" args="--clock --rate=$(arg rosbag_rate) $(arg bag_path)$(arg bag_name).bag"/>
+  <node name="removeLRFnoise" pkg="tests" type="removeLRFnoise.py" /> 
+  <!--node name="glass_map" pkg="tests" type="GlassMapOnLineTest.py" /-->   <!--Stopped becuse cannot see graphs due to force termination problem by roslaunch-->
+  
+    <!-- Viewers -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d  $(arg config_path)"/>
+</launch>
