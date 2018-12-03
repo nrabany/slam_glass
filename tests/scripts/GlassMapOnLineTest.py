@@ -20,6 +20,7 @@ from sklearn.externals import joblib
 import scipy.ndimage.filters as fi
 from matplotlib.colors import LinearSegmentedColormap
 import yaml
+import sys
 
 
 
@@ -472,15 +473,28 @@ class GlassMapBuilder():
         ax2.imshow(maskMap, interpolation="nearest", cmap=cm)
 
         # Save image to map format with associated *.yaml file
-        plt.axis('off')
-        plt.tick_params(axis='both', left='off', top='off', right='off', bottom='off', labelleft='off', labeltop='off',
-                    labelright='off', labelbottom='off')
-        dpi_fig = min(abs(maxX-minX), abs(maxY-minY))
-        print('maxX-minX = ', dpi_fig)
-        fig2.savefig("Map.png", dpi=dpi_fig, bbox_inches='tight', pad_inches=0)
-        yaml_info = {'image' : 'Map.png', 
+        # plt.axis('off')
+        # plt.tick_params(axis='both', left='off', top='off', right='off', bottom='off', labelleft='off', labeltop='off',
+        #             labelright='off', labelbottom='off')
+        # dpi_fig = min(abs(maxX-minX), abs(maxY-minY))
+        # print('maxX-minX = ', dpi_fig)
+        # fig2.savefig("Map.png", bbox_inches='tight', pad_inches=0)
+        filename = 'Map.pgm'
+        try:
+            fout=open(filename, 'wb')
+        except IOError, er:
+            print('Cannot open file ', filename, 'Exiting...', er)
+            sys.exit()
+        #"P5\n# CREATOR: map_saver.cpp %.3f m/pix\n%d %d\n255\n"
+        fout.write('P2\n' + str(self.finalGlassMap.shape[0]) + ' ' + str(self.finalGlassMap.shape[1]) + '\n255\n')
+        buff = self.finalGlassMap.flatten() * 255.0
+        buff = buff.astype(int)
+        buff.tofile(fout, sep=' ', format='%s')
+        fout.close()
+
+        yaml_info = {'image' : 'Map.pgm', 
                      'resolution' : self.mapMetaData.resolution,
-                     'origin' : [self.mapMetaData.origin.position.x, self.mapMetaData.origin.position.y, 0.0],
+                     'origin' : '['+str(self.mapMetaData.origin.position.x)+','+str(self.mapMetaData.origin.position.y)+', 0.0]',
                      'negate' : 0,
                      'occupied_thresh' : 0.65,
                      'free_thresh' : 0.196}
@@ -488,9 +502,9 @@ class GlassMapBuilder():
         with open('Map.yaml', 'w') as yaml_file:
             yaml.dump(yaml_info, yaml_file, default_flow_style=False)
 
-        plt.tick_params(axis='both', left='on', top='off', right='off', bottom='on', labelleft='on', labeltop='off',
-                    labelright='off', labelbottom='on')
-        plt.axis('on')
+        # plt.tick_params(axis='both', left='on', top='off', right='off', bottom='on', labelleft='on', labeltop='off',
+        #             labelright='off', labelbottom='on')
+        # plt.axis('on')
 
         # =============================================
         # From here: plot grid map
