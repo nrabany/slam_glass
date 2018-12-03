@@ -494,7 +494,7 @@ class GlassMapBuilder():
         # Save image to *.pgm format with associated *.yaml file
         self.finalGlassMap[self.gridMap == -1] = 205.0/255.0
         self.finalGlassMap[self.gridMap == 0] = 254.0/255.0
-
+        self.finalGlassMap[self.gridMap > 0] = 100.0*self.finalGlassMap[self.gridMap > 0]/255.0
         path = '../maps/'
         filename = 'Map'
         try:
