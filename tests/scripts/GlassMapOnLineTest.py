@@ -503,10 +503,11 @@ class GlassMapBuilder():
             print('Cannot open file ', filename, 'Exiting...', er)
             sys.exit()
 
-        fout.write('P2\n' + str(self.finalGlassMap.shape[0]) + ' ' + str(self.finalGlassMap.shape[1]) + '\n255\n')
+        fout.write('P5\n{} {}\n255\n'.format(self.finalGlassMap.shape[0], self.finalGlassMap.shape[1]))
         buff = self.finalGlassMap.flatten() * 255.0
-        buff = buff.astype(int)
-        buff.tofile(fout, sep=' ', format='%s')
+        buff = buff.astype(uint8)
+        buff = bytearray(buff)
+        fout.write(buff)
         fout.close()
     
         yaml_info = {'image': 'Map.pgm',
