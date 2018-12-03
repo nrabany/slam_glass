@@ -472,40 +472,6 @@ class GlassMapBuilder():
             
         ax2.imshow(maskMap, interpolation="nearest", cmap=cm)
 
-        # Save image to map format with associated *.yaml file
-        # plt.axis('off')
-        # plt.tick_params(axis='both', left='off', top='off', right='off', bottom='off', labelleft='off', labeltop='off',
-        #             labelright='off', labelbottom='off')
-        # dpi_fig = min(abs(maxX-minX), abs(maxY-minY))
-        # print('maxX-minX = ', dpi_fig)
-        # fig2.savefig("Map.png", bbox_inches='tight', pad_inches=0)
-        filename = 'Map.pgm'
-        try:
-            fout=open(filename, 'wb')
-        except IOError, er:
-            print('Cannot open file ', filename, 'Exiting...', er)
-            sys.exit()
-        #"P5\n# CREATOR: map_saver.cpp %.3f m/pix\n%d %d\n255\n"
-        fout.write('P2\n' + str(self.finalGlassMap.shape[0]) + ' ' + str(self.finalGlassMap.shape[1]) + '\n255\n')
-        buff = self.finalGlassMap.flatten() * 255.0
-        buff = buff.astype(int)
-        buff.tofile(fout, sep=' ', format='%s')
-        fout.close()
-
-        yaml_info = {'image' : 'Map.pgm', 
-                     'resolution' : self.mapMetaData.resolution,
-                     'origin' : '['+str(self.mapMetaData.origin.position.x)+','+str(self.mapMetaData.origin.position.y)+', 0.0]',
-                     'negate' : 0,
-                     'occupied_thresh' : 0.65,
-                     'free_thresh' : 0.196}
-
-        with open('Map.yaml', 'w') as yaml_file:
-            yaml.dump(yaml_info, yaml_file, default_flow_style=False)
-
-        # plt.tick_params(axis='both', left='on', top='off', right='off', bottom='on', labelleft='on', labeltop='off',
-        #             labelright='off', labelbottom='on')
-        # plt.axis('on')
-
         # =============================================
         # From here: plot grid map
         fig3, ax3 = plt.subplots(1)
@@ -525,11 +491,33 @@ class GlassMapBuilder():
         ax3.imshow(occGridMap, interpolation="nearest", cmap=cm2)
 
         # =============================================
-        # From here: plot occupancy map that will be used for AMCL
-        # fig4, ax4 = plt.subplots(1)
-        # ax4.set_title("Occupancy Grid Map AMCL")
-        # ax4.cla()
-        # colors3 = [(180.0/255.0, 180.0/255.0, 180.0/255.0, 1.0), (1,1,1, 1.0), (80.0/255.0, 80.0/255.0, 80.0/255.0, 1.0)] # (r, g, b, alpha) [gray, white, darkGray, black]
+        # Save image to *.pgm format with associated *.yaml file
+        self.finalGlassMap[self.gridMap == -1] = 205.0/255.0
+        self.finalGlassMap[self.gridMap == 0] = 254.0/255.0
+
+        path = '../maps/'
+        filename = 'Map'
+        try:
+            fout=open(path+filename+'.pgm', 'wb')
+        except IOError, er:
+            print('Cannot open file ', filename, 'Exiting...', er)
+            sys.exit()
+
+        fout.write('P2\n' + str(self.finalGlassMap.shape[0]) + ' ' + str(self.finalGlassMap.shape[1]) + '\n255\n')
+        buff = self.finalGlassMap.flatten() * 255.0
+        buff = buff.astype(int)
+        buff.tofile(fout, sep=' ', format='%s')
+        fout.close()
+
+        yaml_info = {'image' : 'Map.pgm', 
+                     'resolution' : self.mapMetaData.resolution,
+                     'origin' : '['+str(self.mapMetaData.origin.position.x)+','+str(self.mapMetaData.origin.position.y)+', 0.0]',
+                     'negate' : 0,
+                     'occupied_thresh' : 0.65,
+                     'free_thresh' : 0.196}
+
+        with open(path+filename+'.yaml', 'w') as yaml_file:
+            yaml.dump(yaml_info, yaml_file, default_flow_style=False)
 
         return
         

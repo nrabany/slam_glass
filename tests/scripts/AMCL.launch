@@ -5,7 +5,7 @@
   <arg name="bag_path"  default="$(find tests)/bags/"/>
   <arg name="map_path"  default="$(find tests)/maps/"/>
   <arg name="bag_name"  default="B14F10"/>   
-  <arg name="map_name"  default="Map1"/>  
+  <arg name="map_name"  default="Map"/>  
   <arg name="rosbag_rate"  default="1" />
   <arg name="config_path"  default="$(find tests)/config/amcl.rviz"/>
 
