@@ -509,12 +509,29 @@ class GlassMapBuilder():
         buff.tofile(fout, sep=' ', format='%s')
         fout.close()
 
-        yaml_info = {'image' : 'Map.pgm', 
-                     'resolution' : self.mapMetaData.resolution,
-                     'origin' : '['+str(self.mapMetaData.origin.position.x)+','+str(self.mapMetaData.origin.position.y)+', 0.0]',
-                     'negate' : 0,
-                     'occupied_thresh' : 0.65,
-                     'free_thresh' : 0.196}
+        # yaml_info = '''image: {}.pgm,
+        #             resolution: {},
+        #             origin: [{}, {}, 0.0],
+        #             negate: 0,
+        #             occupied_thresh: 0.65,
+        #             free_thresh: 0.196'''.format(filename, 
+        #                                         self.mapMetaData.resolution, 
+        #                                         self.mapMetaData.origin.position.x,
+        #                                         self.mapMetaData.origin.position.y)
+                    
+        # yaml_info = 'image: Map.pgm,\n'+
+        #             'resolution: '+self.mapMetaData.resolution+',\n'+
+        #             'origin: ['+self.mapMetaData.origin.position.x+', '+self.mapMetaData.origin.position.y+', 0.0],\n'+
+        #             'negate: 0,\n'+
+        #             'occupied_thresh: 0.65,\n+
+        #             'free_thresh: 0.196'
+    
+        yaml_info = {'image': 'Map.pgm',
+                     'resolution': self.mapMetaData.resolution,
+                     'origin': [self.mapMetaData.origin.position.x, self.mapMetaData.origin.position.y, 0.0],
+                     'negate': 0,
+                     'occupied_thresh': 0.65,
+                     'free_thresh': 0.196}
 
         with open(path+filename+'.yaml', 'w') as yaml_file:
             yaml.dump(yaml_info, yaml_file, default_flow_style=False)
