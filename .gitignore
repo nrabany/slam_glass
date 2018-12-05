@@ -12,6 +12,7 @@ urg_node
 # Ignore these folders but not the specified subfolders
 /navigation/*
 !/navigation/amcl
+!/navigation/map_server
 
 /tests/*
 !/tests/scripts
