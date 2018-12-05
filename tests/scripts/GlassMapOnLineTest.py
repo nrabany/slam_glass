@@ -492,6 +492,8 @@ class GlassMapBuilder():
 
         # =============================================
         # Save image to *.pgm format with associated *.yaml file
+        # Assign gray scale value between 0 and 1: 1 for free space / 0.80 for unknown / 0 to 0.40 for occupied
+        #                                                                             --> beeing glass tends to 0.40
         self.finalGlassMap[self.gridMap == -1] = 205.0/255.0
         self.finalGlassMap[self.gridMap == 0] = 254.0/255.0
         self.finalGlassMap[self.gridMap > 0] = 100.0*self.finalGlassMap[self.gridMap > 0]/255.0
