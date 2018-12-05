@@ -81,13 +81,12 @@ typedef struct
   
 } map_t;
 
-// Result containing 
+// Result containing index of two nearest cells
 typedef struct
 {
-  // Distances to two closest occupied cells
-  double index_first, index_second;
+  int i_first, j_first, i_second, j_second;
   
-} map_nearest_cells;
+} cells_index_t;
 
 
 
@@ -121,8 +120,18 @@ void map_update_cspace(map_t *map, double max_occ_dist);
 // Extract a single range reading from the map
 double map_calc_range(map_t *map, double ox, double oy, double oa, double max_range);
 
+/**************************************************************************
+ * Information extracting functions
+ **************************************************************************/
+
 // Extract two cells index reading from the map (first and second obstacle)
-map_nearest_cells map_calc_ranges(map_t *map, double ox, double oy, double oa, double max_range);
+cells_index_t map_find_cells(map_t *map, double ox, double oy, double oa, double max_range);
+
+// Compute range between a position and a cell
+double compute_range(map_t *map, double ox, double oy, int cell_i, int cell_j);
+
+// Return the probability of being a glass for a cell
+double get_glass_prob(map_t *map, int ci, int cj);
 
 
 /**************************************************************************
