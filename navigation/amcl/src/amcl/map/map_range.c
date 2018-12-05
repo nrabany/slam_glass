@@ -120,7 +120,7 @@ double map_calc_range(map_t *map, double ox, double oy, double oa, double max_ra
 }
 
 // Find two nearest occupied cells from map.
-map_nearest_cells map_find_cells(map_t *map, double ox, double oy, double oa, double max_range)
+cells_index_t map_find_cells(map_t *map, double ox, double oy, double oa, double max_range)
 {
   // Bresenham raytracing
   int x0,x1,y0,y1;
@@ -129,10 +129,10 @@ map_nearest_cells map_find_cells(map_t *map, double ox, double oy, double oa, do
   char steep;
   int tmp;
   int deltax, deltay, error, deltaerr;
-  // Number of cells that are found
+  // Number of obstacles that are found
   int ncells_found = 0;
 
-  map_nearest_cells nearest_cells;
+  cells_index_t nearest_cells;
 
   x0 = MAP_GXWX(map,ox);
   y0 = MAP_GYWY(map,oy);
@@ -141,8 +141,10 @@ map_nearest_cells map_find_cells(map_t *map, double ox, double oy, double oa, do
   y1 = MAP_GYWY(map,oy + max_range * sin(oa));
 
   // Initialize the cells to the ones corresponding to maximum range
-  nearest_cells.index_first = MAP_INDEX(map, x1, y1);
-  nearest_cells.index_second = MAP_INDEX(map, x1, y1);
+  nearest_cells.i_first = x1;
+  nearest_cells.j_first = y1;
+  nearest_cells.i_second = x1;
+  nearest_cells.j_second = y1;
 
   if(abs(y1-y0) > abs(x1-x0))
     steep = 1;
@@ -177,9 +179,26 @@ map_nearest_cells map_find_cells(map_t *map, double ox, double oy, double oa, do
   else
     ystep = -1;
 
-  if(!MAP_VALID(map,y,x) || map->cells[MAP_INDEX(map,y,x)].occ_state > -1)
-    nearest_cells.index_first = MAP_INDEX(map,y,x);
-    ncells_found += 1;
+  if(steep)
+  {
+    if(!MAP_VALID(map,y,x) || map->cells[MAP_INDEX(map,y,x)].occ_state > -1)
+      {
+        nearest_cells.i_first = y;
+        nearest_cells.j_first = x;
+        ncells_found += 1;
+        same_obstacle = 1;
+      }
+  }
+  else
+  {
+    if(!MAP_VALID(map,x,y) || map->cells[MAP_INDEX(map,x,y)].occ_state > -1)
+      {
+        nearest_cells.i_first = x;
+        nearest_cells.j_first = y;
+        ncells_found += 1;
+        same_obstacle = 1;
+      }
+  }    
 
   while(x != (x1 + xstep * 1))
   {
@@ -191,15 +210,70 @@ map_nearest_cells map_find_cells(map_t *map, double ox, double oy, double oa, do
       error -= deltax;
     }
 
-    if(!MAP_VALID(map,x,y) || map->cells[MAP_INDEX(map,x,y)].occ_state > -1)
-      if(ncells_found == 0)
-        nearest_cells.index_first = MAP_INDEX(map,y,x);
-      else
-        nearest_cells.index_second = MAP_INDEX(map,y,x);
-      ncells_found += 1;
+    if(steep)
+    {
+      if(!MAP_VALID(map,y,x) || map->cells[MAP_INDEX(map,y,x)].occ_state > -1)
+      {
+        if(ncells_found == 0)
+        {
+          nearest_cells.i_first = y;
+          nearest_cells.j_first = x;
+          ncells_found += 1;
+          same_obstacle = 1;
+        }
+        else 
+        {
+          if(same_obstacle == 0)
+          {
+            nearest_cells.i_second = y;
+            nearest_cells.j_second = x;
+            ncells_found += 1;
+          }
+        }
+      }
+    }
+    else
+    {
+      if(!MAP_VALID(map,x,y) || map->cells[MAP_INDEX(map,x,y)].occ_state > -1)
+      {
+        if(ncells_found == 0)
+        {
+          nearest_cells.i_first = x;
+          nearest_cells.j_first = y;
+          ncells_found += 1;
+          same_obstacle = 1;
+        }
+        else 
+        {
+          if(same_obstacle == 0)
+          {
+            nearest_cells.i_second = x;
+            nearest_cells.j_second = y;
+            ncells_found += 1;
+          }
+        }
+      }
+    } 
+
+    if(!MAP_VALID(map,y,x) || map->cells[MAP_INDEX(map,y,x)].occ_state <= 0)
+      same_obstacle = 0;
 
     if(ncells_found == 2)
       return nearest_cells;
   }
   return nearest_cells;
+}
+
+// Compute range between a pose and a cell by giving the cell index
+double compute_range(map_t *map, double ox, double oy, int ci, int cj)
+{
+  int x0 = MAP_GXWX(map,ox);
+  int y0 = MAP_GYWY(map,oy);
+  return sqrt((ci-x0)*(ci-x0) + (cj-y0)*(cj-y0)) * map->scale;
+}
+
+// Return the probability of being a glass for a cell
+double get_glass_prob(map_t *map, int ci, int cj)
+{
+  return map->cells[MAP_INDEX(map,ci,cj)].p_glass;
 }

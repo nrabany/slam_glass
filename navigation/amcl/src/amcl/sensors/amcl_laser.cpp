@@ -150,6 +150,7 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t* set)
   double total_weight;
   pf_sample_t *sample;
   pf_vector_t pose;
+  cells_index_t cells_index;
 
   self = (AMCLLaser*) data->sensor;
 
@@ -173,8 +174,13 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t* set)
       obs_bearing = data->ranges[i][1];
 
       // Compute the range according to the map
-      map_range = map_calc_range(self->map, pose.v[0], pose.v[1],
-                                 pose.v[2] + obs_bearing, data->range_max);
+      // map_range = map_calc_range(self->map, pose.v[0], pose.v[1],
+      //                            pose.v[2] + obs_bearing, data->range_max);
+      cells_index = map_find_cells(self->map, pose.v[0], pose.v[1],
+                                   pose.v[2] + obs_bearing, data->range_max);
+      map_range = compute_range(self->map, pose.v[0], pose.v[1],
+                                cells_index.i_first, cells_index.j_first);
+
       pz = 0.0;
 
       // Part 1: good, but noisy, hit
@@ -221,7 +227,7 @@ double AMCLLaser::LikelihoodFieldModel(AMCLLaserData *data, pf_sample_set_t* set
   pf_sample_t *sample;
   pf_vector_t pose;
   pf_vector_t hit;
-
+  
   self = (AMCLLaser*) data->sensor;
 
   total_weight = 0.0;

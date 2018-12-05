@@ -43,7 +43,7 @@
     <param name="odom_alpha2"       value="$(arg odom_alpha2)"/>
     <param name="odom_alpha3"       value="$(arg odom_alpha3)"/>
     <param name="odom_alpha4"       value="$(arg odom_alpha4)"/>
-    <param name="laser_model_type"  value="beam_range_finder_model"/>
+    <param name="laser_model_type"  value="beam"/>
     <remap from="/scan" to="/first"/>
   </node>
 
