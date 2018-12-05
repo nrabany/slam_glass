@@ -18,7 +18,9 @@
  *
  */
 
-/* Author: Brian Gerkey */
+/* Author: Brian Gerkey
+ * Modified by Nicolas Rabany 2018.12.05
+ */
 
 #include <algorithm>
 #include <vector>
@@ -951,10 +953,13 @@ AmclNode::convertMap( const nav_msgs::OccupancyGrid& map_msg )
   {
     if(map_msg.data[i] == 0)
       map->cells[i].occ_state = -1;
-    else if(map_msg.data[i] == 100)
+      map->cells[i].p_glass = -1;
+    else if(map_msg.data[i] >= 100)
       map->cells[i].occ_state = +1;
+      map->cells[i].p_glass = (map_msg.data[i]-100)/100.0;
     else
       map->cells[i].occ_state = 0;
+      map->cells[i].p_glass = -1;
   }
 
   return map;

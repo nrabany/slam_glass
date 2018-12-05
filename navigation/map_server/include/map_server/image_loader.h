@@ -31,6 +31,7 @@
 
 /*
  * Author: Brian Gerkey
+ * Modified by Nicolas Rabany 2018.12.05
  */
 
 #include "nav_msgs/GetMap.h"
@@ -48,8 +49,13 @@
  *          (linearly map in between values to (0,100)
  *  RAW -
  *      value = value
+ *  GLASS_PROB - In this mode, occupancy has already been done by glass confidence map builder
+ *      value >= occ_th - Occupied: p(glass) = (50, 150)
+ *      value <= free_th - Free (0)
+ *      otherwise - Unknown 
+ * 
  */
-enum MapMode {TRINARY, SCALE, RAW};
+enum MapMode {TRINARY, SCALE, RAW, GLASS_PROB};
 
 namespace map_server
 {

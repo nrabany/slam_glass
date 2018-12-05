@@ -27,7 +27,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Author: Brian Gerkey */
+/* Author: Brian Gerkey 
+ * Modified by Nicolas Rabany 2018.12.05
+ */
 
 #define USAGE "\nUSAGE: map_server <map.yaml>\n" \
               "  map.yaml: map description file\n" \
@@ -121,6 +123,8 @@ class MapServer
             mode = SCALE;
           else if(modeS=="raw")
             mode = RAW;
+          else if(modeS=="glass_prob")
+            mode = GLASS_PROB;
           else{
             ROS_ERROR("Invalid mode tag \"%s\".", modeS.c_str());
             exit(-1);

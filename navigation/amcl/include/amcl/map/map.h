@@ -54,6 +54,9 @@ typedef struct
   // Wifi levels
   //int wifi_levels[MAP_WIFI_MAX_LEVELS];
 
+  // Probability of beeing glass (-1 = not occupied, (0, 1) = p(glass)) 
+  float p_glass;
+
 } map_cell_t;
 
 

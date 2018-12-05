@@ -31,6 +31,7 @@
  * This file contains helper functions for loading images as maps.
  *
  * Author: Brian Gerkey
+ * Modified by Nicolas Rabany 2018.12.05
  */
 
 #include <cstring>
@@ -104,7 +105,7 @@ loadMapFromFile(nav_msgs::GetMap::Response* resp,
 
   // NOTE: Trinary mode still overrides here to preserve existing behavior.
   // Alpha will be averaged in with color channels when using trinary mode.
-  if (mode==TRINARY || !img->format->Amask)
+  if (mode==TRINARY || mode==GLASS_PROB || !img->format->Amask)
     avg_channels = n_channels;
   else
     avg_channels = n_channels - 1;
@@ -144,11 +145,15 @@ loadMapFromFile(nav_msgs::GetMap::Response* resp,
       // Apply thresholds to RGB means to determine occupancy values for
       // map.  Note that we invert the graphics-ordering of the pixels to
       // produce a map with cell (0,0) in the lower-left corner.
-      if(occ > occ_th)
-        value = +100;
+      if(occ > occ_th) {
+        if(mode==GLASS_PROB)
+          value = color_avg + 100;
+        else
+          value = +100;
+      }
       else if(occ < free_th)
         value = 0;
-      else if(mode==TRINARY || alpha < 1.0)
+      else if(mode==TRINARY || mode==GLASS_PROB || alpha < 1.0)
         value = -1;
       else {
         double ratio = (occ - free_th) / (occ_th - free_th);
