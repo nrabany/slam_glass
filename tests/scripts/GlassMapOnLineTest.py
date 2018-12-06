@@ -167,7 +167,6 @@ class GlassMapBuilder():
                   from 0 deg to 90 deg, or -1 means cannot detected successfully
                   incident angles of all input beams; multiple beams, one scan;	
         """
-        print(self.gridSize, ', ', self.maxRange)
         angleStep = 1
         thetas = np.deg2rad(np.arange(0, 180, angleStep)) # line angles (180,)
         rhos = np.linspace(-self.maxRange, self.maxRange, 2*self.maxRange/self.gridSize+1) # line rhos (601,)

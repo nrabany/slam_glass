@@ -24,7 +24,7 @@
 // Author: Andrew Howard
 // Date: 6 Feb 2003
 // CVS: $Id: amcl_laser.cc 7057 2008-10-02 00:44:06Z gbiggs $
-//
+// Modified by Nicolas Rabany 2018.12.05
 ///////////////////////////////////////////////////////////////////////////
 
 #include <sys/types.h> // required by Darwin
@@ -151,6 +151,7 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t* set)
   pf_sample_t *sample;
   pf_vector_t pose;
   cells_index_t cells_index;
+  double p_glass;
 
   self = (AMCLLaser*) data->sensor;
 
@@ -180,6 +181,7 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t* set)
                                    pose.v[2] + obs_bearing, data->range_max);
       map_range = compute_range(self->map, pose.v[0], pose.v[1],
                                 cells_index.i_first, cells_index.j_first);
+      p_glass = get_glass_prob(self->map, cells_index.i_first, cells_index.j_first);
 
       pz = 0.0;
 

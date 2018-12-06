@@ -23,6 +23,7 @@
  * Author: Andrew Howard
  * Date: 6 Feb 2003
  * CVS: $Id: map.h 1713 2003-08-23 04:03:43Z inspectorg $
+ * Modified by Nicolas Rabany 2018.12.05
  **************************************************************************/
 
 #ifndef MAP_H

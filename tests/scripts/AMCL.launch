@@ -6,7 +6,7 @@
   <arg name="map_path"  default="$(find tests)/maps/"/>
   <arg name="bag_name"  default="B14F10"/>   
   <arg name="map_name"  default="Map0"/>  
-  <arg name="rosbag_rate"  default="1" />
+  <arg name="rosbag_rate"  default="0.5" />
   <arg name="config_path"  default="$(find tests)/config/amcl.rviz"/>
 
   <!-- amcl parameters -->
@@ -44,6 +44,8 @@
     <param name="odom_alpha3"       value="$(arg odom_alpha3)"/>
     <param name="odom_alpha4"       value="$(arg odom_alpha4)"/>
     <param name="laser_model_type"  value="beam"/>
+    <param name="laser_max_beams"   value="15"/>
+
     <remap from="/scan" to="/first"/>
   </node>
 

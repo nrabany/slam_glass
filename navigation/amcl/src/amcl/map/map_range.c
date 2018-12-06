@@ -23,13 +23,14 @@
  * Author: Andrew Howard
  * Date: 18 Jan 2003
  * CVS: $Id: map_range.c 1347 2003-05-05 06:24:33Z inspectorg $
+ * Modified by Nicolas Rabany 2018.12.05
 **************************************************************************/
 
 #include <assert.h>
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
-
+#include "opencv2/core/version.hpp"
 #include "amcl/map/map.h"
 
 // Extract a single range reading from the map.  Unknown cells and/or
@@ -131,6 +132,7 @@ cells_index_t map_find_cells(map_t *map, double ox, double oy, double oa, double
   int deltax, deltay, error, deltaerr;
   // Number of obstacles that are found
   int ncells_found = 0;
+  int same_obstacle = 0;
 
   cells_index_t nearest_cells;
 
