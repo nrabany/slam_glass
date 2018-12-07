@@ -134,6 +134,11 @@ double compute_range(map_t *map, double ox, double oy, int cell_i, int cell_j);
 // Return the probability of being a glass for a cell
 double get_glass_prob(map_t *map, int ci, int cj);
 
+/**************************************************************************
+ * Incindent angle functions
+ **************************************************************************/
+
+double calc_incindent_angle();
 
 /**************************************************************************
  * GUI/diagnostic functions
@@ -147,7 +152,6 @@ void map_draw_cspace(map_t *map, struct _rtk_fig_t *fig);
 
 // Draw a wifi map
 void map_draw_wifi(map_t *map, struct _rtk_fig_t *fig, int index);
-
 
 /**************************************************************************
  * Map manipulation macros

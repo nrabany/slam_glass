@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <unistd.h>
+// #include <opencv2/core/core.hpp>
 
 #include "amcl/sensors/amcl_laser.h"
 
@@ -152,6 +153,9 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t* set)
   pf_vector_t pose;
   cells_index_t cells_index;
   double p_glass;
+  // CvPoint p1;
+  // p1.x = 0;
+  // p1.y = 0;
 
   self = (AMCLLaser*) data->sensor;
 
