@@ -106,28 +106,22 @@ double compute_incindent_angle(map_t* map, double oa, int ci, int cj)
 
     for(int i=0; i<1; i++)
     {
-        // double theta = map->lines[i].theta;
-        // double rho = map->lines[i].rho;
-        // cout << "HERE 2: " << theta << "\n" << endl;
-        // // cout << "HERE 2\n" << endl;
+        double theta = map->lines[i].theta;
+        double rho = map->lines[i].rho;
+        // cout << "HERE 2\n" << endl;
 
-        // double err = min_err;
+        double err = min_err;
 
-        // if(abs(theta)>0.3 && abs(theta-M_PI)>0.3 && abs(theta-2*M_PI)>0.3) 
-        // {
-        //     double err = yCell - (-xCell*cos(theta)+rho)/sin(theta);
-        //     cout << "HERE 3\n" << endl;
-        // }
-        // cout << "HERE 4\n" << endl;
-        // if(err < min_err)
-        // {
-        //     cout << "HERE 4bis\n" << endl;
-        //     min_err = err;
-        //     line_index = i;
-        // }
-        // cout << "HERE 4bisbis\n" << endl;
+        if(abs(theta)>0.3 && abs(theta-M_PI)>0.3 && abs(theta-2*M_PI)>0.3) 
+        {
+            double err = yCell - (-xCell*cos(theta)+rho)/sin(theta);
+        }
+        if(err < min_err)
+        {
+            min_err = err;
+            line_index = i;
+        }
     }
-    //
     // If no close line return -1 : failure
     if(line_index == -1)
         return -1;
