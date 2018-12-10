@@ -60,6 +60,16 @@ typedef struct
 
 } map_cell_t;
 
+// Description for a single map line.
+typedef struct
+{
+  // Angle
+  double theta;
+
+  // Range
+  double rho;
+
+} map_line_t;
 
 // Description for a map
 typedef struct
@@ -75,6 +85,9 @@ typedef struct
   
   // The map data, stored as a grid
   map_cell_t *cells;
+
+  // The map lines, stored as a grid
+  map_line_t *lines;
 
   // Max distance at which we care about obstacles, for constructing
   // likelihood field
@@ -138,7 +151,7 @@ double get_glass_prob(map_t *map, int ci, int cj);
  * Incindent angle functions
  **************************************************************************/
 
-double calc_incindent_angle();
+// double houghLines();
 
 /**************************************************************************
  * GUI/diagnostic functions
