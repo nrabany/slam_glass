@@ -33,7 +33,7 @@
   <!-- Processing nodes -->
   <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_path)$(arg map_name).yaml" />
 
-  <node name="amcl" pkg="amcl" type="amcl">
+  <node name="amcl" pkg="amcl" type="amcl" output="screen">
     <rosparam command="load" file="$(arg bag_path)/initial_conditions/$(arg bag_name).yaml" />
     <param name="update_min_d"          value="$(arg update_min_d)" />
     <param name="recovery_alpha_slow"   value="$(arg recovery_alpha_slow)" />
