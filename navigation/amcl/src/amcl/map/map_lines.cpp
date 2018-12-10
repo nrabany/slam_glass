@@ -127,7 +127,7 @@ double compute_incindent_angle(map_t* map, double oa, int ci, int cj)
         // }
         // cout << "HERE 4bisbis\n" << endl;
     }
-
+    //
     // If no close line return -1 : failure
     if(line_index == -1)
         return -1;
