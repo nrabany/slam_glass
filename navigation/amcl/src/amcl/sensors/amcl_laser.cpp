@@ -37,6 +37,9 @@
 
 using namespace amcl;
 
+#include <iostream>
+using namespace std;
+
 ////////////////////////////////////////////////////////////////////////////////
 // Default constructor
 AMCLLaser::AMCLLaser(size_t max_beams, map_t* map) : AMCLSensor(), 
@@ -152,6 +155,7 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t* set)
   pf_vector_t pose;
   cells_index_t cells_index;
   double p_glass;
+  double inc_angle = -1;
 
   self = (AMCLLaser*) data->sensor;
 
@@ -182,6 +186,11 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t* set)
       map_range = compute_range(self->map, pose.v[0], pose.v[1],
                                 cells_index.i_first, cells_index.j_first);
       p_glass = get_glass_prob(self->map, cells_index.i_first, cells_index.j_first);
+
+      inc_angle = compute_incindent_angle(self->map, pose.v[2] + obs_bearing, cells_index.i_first, cells_index.j_first);
+
+      // if(i==7);
+      // cout << inc_angle << "\n" << endl;
 
       pz = 0.0;
 

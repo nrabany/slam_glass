@@ -158,6 +158,9 @@ double get_glass_prob(map_t *map, int ci, int cj);
 
 void map_hough_lines(map_t* map);
 
+double compute_incindent_angle(map_t* map, double oa, int ci, int cj);
+
+
 /**************************************************************************
  * GUI/diagnostic functions
  **************************************************************************/

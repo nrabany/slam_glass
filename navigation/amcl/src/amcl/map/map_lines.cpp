@@ -4,7 +4,6 @@
 #include <string.h>
 #include "amcl/map/map.h"
 #include <opencv2/opencv.hpp>
-#include <ros/console.h>
 
 #include <iostream>
 
@@ -76,10 +75,11 @@ void map_hough_lines(map_t* map)
         map->nb_lines += 1;
         realloc_s((void **) &(map->lines), sizeof(map_line_t)*map->nb_lines);
         map_line_t line;
-        line.rho = rho;
+        line.rho = rho*map->scale;
         line.theta = theta;
         map->lines[map->nb_lines-1] = line;
-        cout << line.rho << ", " << line.theta << "\n" << endl;
+        // cout << line.rho << ", " << line.theta << "\n" << endl;
+        cout << map->nb_lines;
      }
   }
  #else
@@ -93,6 +93,50 @@ void map_hough_lines(map_t* map)
  #endif
 
 //  waitKey();
+}
+
+double compute_incindent_angle(map_t* map, double oa, int ci, int cj)
+{
+    // Find line on which is lying the cell
+    double xCell = MAP_WXGX(map, ci);
+    double yCell = MAP_WXGX(map, cj);
+
+    double min_err = 0.3;
+    int line_index = -1;
+
+    for(int i=0; i<1; i++)
+    {
+        // double theta = map->lines[i].theta;
+        // double rho = map->lines[i].rho;
+        // cout << "HERE 2: " << theta << "\n" << endl;
+        // // cout << "HERE 2\n" << endl;
+
+        // double err = min_err;
+
+        // if(abs(theta)>0.3 && abs(theta-M_PI)>0.3 && abs(theta-2*M_PI)>0.3) 
+        // {
+        //     double err = yCell - (-xCell*cos(theta)+rho)/sin(theta);
+        //     cout << "HERE 3\n" << endl;
+        // }
+        // cout << "HERE 4\n" << endl;
+        // if(err < min_err)
+        // {
+        //     cout << "HERE 4bis\n" << endl;
+        //     min_err = err;
+        //     line_index = i;
+        // }
+        // cout << "HERE 4bisbis\n" << endl;
+    }
+
+    // If no close line return -1 : failure
+    if(line_index == -1)
+        return -1;
+
+    double incindent_angle = abs(map->lines[line_index].theta - oa);
+    if(oa < M_PI/2.0 && map->lines[line_index].theta > M_PI*1.5)
+        incindent_angle = 2*M_PI - incindent_angle;
+
+    return incindent_angle;
 }
 
 /*
