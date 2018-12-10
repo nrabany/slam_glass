@@ -182,7 +182,7 @@ cells_index_t map_find_cells(map_t *map, double ox, double oy, double oa, double
 
   if(steep)
   {
-    if(!MAP_VALID(map,y,x) || map->cells[MAP_INDEX(map,y,x)].occ_state > 0)
+    if(!MAP_VALID(map,y,x) || map->cells[MAP_INDEX(map,y,x)].occ_state > -1)
       {
         nearest_cells.i_first = y;
         nearest_cells.j_first = x;
@@ -192,7 +192,7 @@ cells_index_t map_find_cells(map_t *map, double ox, double oy, double oa, double
   }
   else
   {
-    if(!MAP_VALID(map,x,y) || map->cells[MAP_INDEX(map,x,y)].occ_state > 0)
+    if(!MAP_VALID(map,x,y) || map->cells[MAP_INDEX(map,x,y)].occ_state > -1)
       {
         nearest_cells.i_first = x;
         nearest_cells.j_first = y;
@@ -213,7 +213,7 @@ cells_index_t map_find_cells(map_t *map, double ox, double oy, double oa, double
 
     if(steep)
     {
-      if(!MAP_VALID(map,y,x) || map->cells[MAP_INDEX(map,y,x)].occ_state > 0)
+      if(!MAP_VALID(map,y,x) || map->cells[MAP_INDEX(map,y,x)].occ_state > -1)
       {
         if(ncells_found == 0)
         {
@@ -235,7 +235,7 @@ cells_index_t map_find_cells(map_t *map, double ox, double oy, double oa, double
     }
     else
     {
-      if(!MAP_VALID(map,x,y) || map->cells[MAP_INDEX(map,x,y)].occ_state > 0)
+      if(!MAP_VALID(map,x,y) || map->cells[MAP_INDEX(map,x,y)].occ_state > -1)
       {
         if(ncells_found == 0)
         {

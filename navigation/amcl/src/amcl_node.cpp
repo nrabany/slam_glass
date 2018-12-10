@@ -949,6 +949,10 @@ AmclNode::convertMap( const nav_msgs::OccupancyGrid& map_msg )
   // Convert to player format
   map->cells = (map_cell_t*)malloc(sizeof(map_cell_t)*map->size_x*map->size_y);
   ROS_ASSERT(map->cells);
+  // map->gridData = (int*)malloc(sizeof(int)*map->size_x*map->size_y);
+  // ROS_ASSERT(map->gridData);
+  // map->lines = (map_line_t*)malloc(sizeof(map_line_t));
+  // ROS_ASSERT(map->lines);
   for(int i=0;i<map->size_x * map->size_y;i++)
   {
     if(map_msg.data[i] == 0)
@@ -966,8 +970,9 @@ AmclNode::convertMap( const nav_msgs::OccupancyGrid& map_msg )
       map->cells[i].occ_state = 0;
       map->cells[i].p_glass = -1;
     }
+    // map->gridData[i] = map->cells[i].occ_state;
   }
-
+  // map_hough_lines(map);
   return map;
 }
 

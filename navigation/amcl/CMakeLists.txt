@@ -57,7 +57,7 @@ add_library(amcl_pf
 
 add_library(amcl_map
                     src/amcl/map/map.c
-		    src/amcl/map/map_lines.cpp
+		    #src/amcl/map/map_lines.cpp
                     src/amcl/map/map_cspace.cpp
                     src/amcl/map/map_range.c
                     src/amcl/map/map_store.c
