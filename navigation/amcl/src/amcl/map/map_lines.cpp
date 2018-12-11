@@ -19,7 +19,7 @@ void help()
 
 void map_hough_lines(map_t* map)
 {
- Mat src(4000,4000,CV_8UC1,map->gridData);
+ Mat src(map->size_x,map->size_y,CV_8UC1,map->gridData);
  
  // Here get a binary image by thresholding
  uchar intensityThresh = 200;
