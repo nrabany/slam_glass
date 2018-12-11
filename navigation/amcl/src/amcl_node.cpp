@@ -951,8 +951,9 @@ AmclNode::convertMap( const nav_msgs::OccupancyGrid& map_msg )
   ROS_ASSERT(map->cells);
   map->gridData = (int*)malloc(sizeof(int)*map->size_x*map->size_y);
   ROS_ASSERT(map->gridData);
-  map->lines = (map_line_t*)malloc(sizeof(map_line_t));
+  map->lines = (map_line_t*)malloc(sizeof(map_line_t)*2000);
   ROS_ASSERT(map->lines);
+  map->nb_lines = 0;
   for(int i=0;i<map->size_x * map->size_y;i++)
   {
     if(map_msg.data[i] == 0)

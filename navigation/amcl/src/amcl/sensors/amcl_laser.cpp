@@ -187,10 +187,10 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t* set)
                                 cells_index.i_first, cells_index.j_first);
       p_glass = get_glass_prob(self->map, cells_index.i_first, cells_index.j_first);
 
-      inc_angle = compute_incindent_angle(self->map, pose.v[2] + obs_bearing, cells_index.i_first, cells_index.j_first);
+      // inc_angle = compute_incindent_angle(self->map, pose.v[2] + obs_bearing, cells_index.i_first, cells_index.j_first);
 
-      // if(i==7);
-      // cout << inc_angle << "\n" << endl;
+      // if(i==7)
+      //   cout << inc_angle << "\n" << endl;
 
       pz = 0.0;
 

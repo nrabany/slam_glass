@@ -17,21 +17,10 @@ void help()
          "./houghlines <image_name>, Default is pic1.jpg\n" << endl;
 }
 
-// Safely realloc memory 
-void* realloc_s(void **ptr, size_t taille)
-{
- void *ptr_realloc = realloc(*ptr, taille);
-
- if (ptr_realloc != NULL)
-     *ptr = ptr_realloc;
- 
- return ptr_realloc;
-}
-
 void map_hough_lines(map_t* map)
 {
  Mat src(4000,4000,CV_8UC1,map->gridData);
-
+ 
  // Here get a binary image by thresholding
  uchar intensityThresh = 200;
  Mat srcThresh;
@@ -44,43 +33,43 @@ void map_hough_lines(map_t* map)
  #if 1
   vector<Vec2f> lines;
   HoughLines(srcThresh, lines, 1, CV_PI/180, 40, 0, 0 );
-  
-  vector<Vec2f> groups; // <rho, theta>
+  cout << "before: " << lines.size() << "\n" << endl;
+
   for( size_t i = 0; i < lines.size(); i++ )
   {
      bool new_group = true;
+     float rho = lines[i][0]*map->scale, theta = lines[i][1];
 
-     float rho = lines[i][0], theta = lines[i][1];
-     if(groups.size() != 0)
-     {
-        for(int j = 0; j < groups.size(); j++)
+    if(map->nb_lines!=0)
+    {
+        for(int j = 0; j < map->nb_lines; j++)
         {
-            double rho_diff = abs(rho-groups[j][0]);
-            double theta_diff = abs(theta-groups[j][1]);
+            double rho_diff = abs(rho-map->lines[j].rho);
+            double theta_diff = abs(theta-map->lines[j].theta);
             // Here adjust parameters to group lines
-            if(rho_diff < 80 && theta_diff < 3*CV_PI/180)
+            if(rho_diff < 80*map->scale && theta_diff < 3*CV_PI/180)
             {
                 new_group = false;
+                break;
             }
-
         }
-     }
-     if(new_group == true)
-     {
-        Vec2f group;
-        group[0] = rho;
-        group[1] = theta;
-        groups.push_back(group);
+    }
 
+    if(new_group == true)
+    {
         map->nb_lines += 1;
-        realloc_s((void **) &(map->lines), sizeof(map_line_t)*map->nb_lines);
+
+        if(map->nb_lines >1999)
+        {
+            cout << "More than 1999 groups of lines -> break because memory insufficient" << endl;
+            break;
+        }
+        
         map_line_t line;
-        line.rho = rho*map->scale;
+        line.rho = rho;
         line.theta = theta;
         map->lines[map->nb_lines-1] = line;
-        // cout << line.rho << ", " << line.theta << "\n" << endl;
-        cout << map->nb_lines;
-     }
+    }
   }
  #else
   vector<Vec4i> lines;
@@ -91,6 +80,7 @@ void map_hough_lines(map_t* map)
     line( cdst, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(0,0,255), 1, CV_AA);
   }
  #endif
+ cout << "nb_lines " << map->nb_lines << "\n" << endl;
 
 //  waitKey();
 }
