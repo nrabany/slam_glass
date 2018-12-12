@@ -10,115 +10,106 @@
 using namespace cv;
 using namespace std;
 
-void help()
+void map_hough_lines(map_t *map, uint16_t minPoints)
 {
- cout << "\nThis program demonstrates line finding with the Hough transform.\n"
-         "Usage:\n"
-         "./houghlines <image_name>, Default is pic1.jpg\n" << endl;
-}
+    Mat src(map->size_x, map->size_y, CV_8UC1, map->gridData);
 
-void map_hough_lines(map_t* map)
-{
- Mat src(map->size_x,map->size_y,CV_8UC1,map->gridData);
- 
- // Here get a binary image by thresholding
- uchar intensityThresh = 200;
- Mat srcThresh;
- threshold(src, srcThresh, intensityThresh, 255, THRESH_BINARY_INV);
+    // Here get a binary image by thresholding
+    uchar intensityThresh = 200;
+    Mat srcThresh = src;
+    // threshold(src, srcThresh, intensityThresh, 255, THRESH_BINARY);
 
- // Lines will be plot on cdst
- Mat cdst;
- cvtColor(srcThresh, cdst, CV_GRAY2BGR);
- 
- #if 1
-  vector<Vec2f> lines;
-  HoughLines(srcThresh, lines, 1, CV_PI/180, 40, 0, 0 );
-  cout << "before: " << lines.size() << "\n" << endl;
+    //---------------------------------------------------------------------
 
-  for( size_t i = 0; i < lines.size(); i++ )
-  {
-     bool new_group = true;
-     float rho = lines[i][0]*map->scale, theta = lines[i][1];
+    vector<Vec2f> lines;
+    HoughLines(srcThresh, lines, 1, CV_PI / 180, minPoints, 0, 0);
+    cout << "before: " << lines.size() << "   \n"
+         << endl;
 
-    if(map->nb_lines!=0)
+    for (size_t i = 0; i < lines.size(); i++)
     {
-        for(int j = 0; j < map->nb_lines; j++)
+        bool new_group = true;
+        float rho = lines[i][0] * map->scale, theta = lines[i][1];
+
+        if (map->nb_lines != 0)
         {
-            double rho_diff = abs(rho-map->lines[j].rho);
-            double theta_diff = abs(theta-map->lines[j].theta);
-            // Here adjust parameters to group lines
-            if(rho_diff < 80*map->scale && theta_diff < 3*CV_PI/180)
+            for (int j = 0; j < map->nb_lines; j++)
             {
-                new_group = false;
-                break;
+                double rho_diff = abs(rho - map->lines[j].rho);
+                double theta_diff = abs(theta - map->lines[j].theta);
+                double rho_add = abs(rho + map->lines[j].rho);
+                // Here adjust parameters to group lines
+                if ((rho_diff < 80 * map->scale && theta_diff < 3 * M_PI / 180) || (rho_add < 80 * map->scale && theta_diff - M_PI < 3 * M_PI / 180))
+                {
+                    new_group = false;
+                    break;
+                }
             }
         }
-    }
 
-    if(new_group == true)
-    {
-        map->nb_lines += 1;
-
-        if(map->nb_lines >1999)
+        if (new_group == true)
         {
-            cout << "More than 1999 groups of lines -> break because memory insufficient" << endl;
-            break;
-        }
-        
-        map_line_t line;
-        line.rho = rho;
-        line.theta = theta;
-        map->lines[map->nb_lines-1] = line;
-    }
-  }
- #else
-  vector<Vec4i> lines;
-  HoughLinesP(srcThresh, lines, 1, CV_PI/180, 20, 20, 12);
-  for( size_t i = 0; i < lines.size(); i++ )
-  {
-    Vec4i l = lines[i];
-    line( cdst, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(0,0,255), 1, CV_AA);
-  }
- #endif
- cout << "nb_lines " << map->nb_lines << "\n" << endl;
+            map->nb_lines += 1;
 
-//  waitKey();
+            if (map->nb_lines > 1999)
+            {
+                cout << "More than 1999 groups of lines -> break because memory insufficient" << endl;
+                break;
+            }
+
+            map_line_t mline;
+            mline.rho = rho;
+            mline.theta = theta;
+            map->lines[map->nb_lines - 1] = mline;
+        }
+    }
+    cout << "nb_lines " << map->nb_lines << "  \n"
+         << endl;
 }
 
-double compute_incindent_angle(map_t* map, double oa, int ci, int cj)
+double compute_incindent_angle(map_t *map, double oa, int ci, int cj, double min_err)
 {
-    // Find line on which is lying the cell
-    double xCell = MAP_WXGX(map, ci);
-    double yCell = MAP_WXGX(map, cj);
+    double xCell = ci * map->scale;
+    double yCell = cj * map->scale;
 
-    double min_err = 0.3;
     int line_index = -1;
 
-    for(int i=0; i<map->nb_lines; i++)
+    for (int i = 0; i < map->nb_lines; i++)
     {
         double theta = map->lines[i].theta;
         double rho = map->lines[i].rho;
-        // cout << "HERE 2\n" << endl;
 
         double err = min_err;
 
-        if(abs(theta)>0.3 && abs(theta-M_PI)>0.3 && abs(theta-2*M_PI)>0.3) 
+        if (abs(theta) <= 0.05 || abs(theta - 2 * M_PI) <= 0.05)
+            err = abs(xCell - rho);
+        else if (abs(theta - M_PI) <= 0.05)
+            err = abs(xCell + rho);
+        else
+            err = abs(yCell - (-xCell * cos(theta) + rho) / sin(theta));
+
+        // cout << "For line[" << i << "]   err " << err << ", minerr " << min_err << endl;
+
+        if (err < min_err)
         {
-            double err = yCell - (-xCell*cos(theta)+rho)/sin(theta);
-        }
-        if(err < min_err)
-        {
+            // cout << "here " << err << endl;
             min_err = err;
             line_index = i;
         }
     }
     // If no close line return -1 : failure
-    if(line_index == -1)
+    if (line_index == -1)
+    {
+        // cout << "return" << endl;
         return -1;
-
+    }
+    // Here get absolute value and kepp incindent angle between 0° and 90°
     double incindent_angle = abs(map->lines[line_index].theta - oa);
-    if(oa < M_PI/2.0 && map->lines[line_index].theta > M_PI*1.5)
-        incindent_angle = 2*M_PI - incindent_angle;
+    while (incindent_angle > M_PI / 2)
+    {
+        incindent_angle -= M_PI;
+        incindent_angle = abs(incindent_angle);
+    }
 
     return incindent_angle;
 }

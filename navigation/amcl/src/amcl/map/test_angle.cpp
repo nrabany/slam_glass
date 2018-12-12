@@ -35,7 +35,11 @@ map_t *map_alloc(void)
 
 void map_hough_lines(map_t *map, uint16_t minPoints)
 {
-    Mat src(map->size_x, map->size_y, CV_8UC1, map->gridData);
+    const char* filename = "../../../../../tests/maps/Map0.pgm";
+    //  const char* filename = "../../../../../tests/maps/ex1.pgm";
+    Mat src = imread(filename, 0); 
+
+    // Mat src(map->size_x, map->size_y, CV_8UC1, map->gridData);
 
     // Here get a binary image by thresholding
     uchar intensityThresh = 200;
@@ -65,7 +69,7 @@ void map_hough_lines(map_t *map, uint16_t minPoints)
                 double theta_diff = abs(theta - map->lines[j].theta);
                 double rho_add = abs(rho + map->lines[j].rho);
                 // Here adjust parameters to group lines
-                if ((rho_diff < 2 * map->scale && theta_diff < 3 * M_PI / 180) || (rho_add < 2 * map->scale && theta_diff - M_PI < 3 * M_PI / 180))
+                if ((rho_diff < 80 * map->scale && theta_diff < 3 * M_PI / 180) || (rho_add < 80 * map->scale && theta_diff - M_PI < 3 * M_PI / 180))
                 {
                     new_group = false;
                     break;

@@ -188,15 +188,7 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t* set)
                                 cells_index.i_first, cells_index.j_first);
       p_glass = get_glass_prob(self->map, cells_index.i_first, cells_index.j_first);
 
-      inc_angle = compute_incindent_angle(self->map, pose.v[2] + obs_bearing, cells_index.i_first, cells_index.j_first);
-
-      // if(i==7*step  && j==0 && self->counter%100==0)
-      //   self->counter += 1;
-      //   cout << self->counter << "\n" << endl;
-        // cout << "at " << obs_bearing/M_PI*180 << ", inci angle: " <<  inc_angle/M_PI*180 << "\n" << endl;
-        // double t = ros::Time::now().toSec();
-        // double whole;
-        // double frac = modf(t, &whole);
+      // inc_angle = compute_incindent_angle(self->map, pose.v[2] + obs_bearing, cells_index.i_first, cells_index.j_first, 30);
 
       pz = 0.0;
 

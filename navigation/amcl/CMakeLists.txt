@@ -56,7 +56,6 @@ add_library(amcl_pf
                     src/amcl/pf/pf_draw.c)
 
 add_library(amcl_map
-		    src/amcl/map/test_angle.cpp
                     src/amcl/map/map.c
 		    src/amcl/map/map_lines.cpp
                     src/amcl/map/map_cspace.cpp

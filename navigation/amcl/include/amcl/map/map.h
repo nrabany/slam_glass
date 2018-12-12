@@ -156,9 +156,9 @@ double get_glass_prob(map_t *map, int ci, int cj);
  * Incindent angle functions
  **************************************************************************/
 
-void map_hough_lines(map_t* map);
+void map_hough_lines(map_t* map, uint16_t minPoints);
 
-double compute_incindent_angle(map_t* map, double oa, int ci, int cj);
+double compute_incindent_angle(map_t* map, double oa, int ci, int cj, double min_err);
 
 
 /**************************************************************************
