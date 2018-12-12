@@ -63,8 +63,9 @@ void map_hough_lines(map_t *map, uint16_t minPoints)
             {
                 double rho_diff = abs(rho - map->lines[j].rho);
                 double theta_diff = abs(theta - map->lines[j].theta);
+                double rho_add = abs(rho + map->lines[j].rho);
                 // Here adjust parameters to group lines
-                if (rho_diff < 2 * map->scale && theta_diff < 3 * CV_PI / 180)
+                if ((rho_diff < 2 * map->scale && theta_diff < 3 * M_PI / 180) || (rho_add < 2 * map->scale && theta_diff - M_PI < 3 * M_PI / 180))
                 {
                     new_group = false;
                     break;
@@ -131,10 +132,10 @@ double compute_incindent_angle(map_t *map, double oa, int ci, int cj, double min
         // cout << "HERE 2\n" << endl;
 
         double err = min_err;
- 
-        if(abs(theta)<=0.05 ||  abs(theta - 2 * M_PI) <= 0.05)
+
+        if (abs(theta) <= 0.05 || abs(theta - 2 * M_PI) <= 0.05)
             err = abs(xCell - rho);
-        else if(abs(theta-M_PI)<=0.05)
+        else if (abs(theta - M_PI) <= 0.05)
             err = abs(xCell + rho);
         else
             err = abs(yCell - (-xCell * cos(theta) + rho) / sin(theta));
