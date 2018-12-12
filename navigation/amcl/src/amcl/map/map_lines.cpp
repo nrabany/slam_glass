@@ -26,6 +26,9 @@ void map_hough_lines(map_t *map, uint16_t minPoints)
     cout << "before: " << lines.size() << "   \n"
          << endl;
 
+    // Translation factor from origin
+    double origin_trans_fact = sqrt(map->origin_x*map->origin_x + map->origin_y*map->origin_y);
+
     for (size_t i = 0; i < lines.size(); i++)
     {
         bool new_group = true;
@@ -58,7 +61,7 @@ void map_hough_lines(map_t *map, uint16_t minPoints)
             }
 
             map_line_t mline;
-            mline.rho = rho;
+            mline.rho = rho + origin_trans_fact; // Here translate the line so that center is origin
             mline.theta = theta;
             map->lines[map->nb_lines - 1] = mline;
         }
