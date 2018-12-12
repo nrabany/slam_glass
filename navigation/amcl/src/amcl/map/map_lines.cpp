@@ -94,7 +94,7 @@ double compute_incindent_angle(map_t* map, double oa, int ci, int cj)
     double min_err = 0.3;
     int line_index = -1;
 
-    for(int i=0; i<1; i++)
+    for(int i=0; i<map->nb_lines; i++)
     {
         double theta = map->lines[i].theta;
         double rho = map->lines[i].rho;

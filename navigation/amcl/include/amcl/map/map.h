@@ -92,7 +92,7 @@ typedef struct
   // The number of lines 
   int nb_lines;
 
-  int *gridData;
+  uint8_t *gridData;
 
   // Max distance at which we care about obstacles, for constructing
   // likelihood field
