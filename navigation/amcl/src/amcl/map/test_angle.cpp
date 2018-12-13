@@ -38,15 +38,16 @@ void map_hough_lines(map_t *map, uint16_t minPoints)
     const char* filename = "../../../../../tests/maps/Map0.pgm";
     //  const char* filename = "../../../../../tests/maps/ex1.pgm";
     Mat src = imread(filename, 0); 
+    double size = 4000;
 
     // Mat src(map->size_x, map->size_y, CV_8UC1, map->gridData);
-    cout << "(rows, cols): " << src.rows << ", " << src.cols << endl;
+    // double size = map->size_x;
     // Here get a binary image by thresholding
     uchar intensityThresh = 200;
-    Mat srcThresh, srcFlip;
+    Mat srcThresh, flipIm, srcFlip;
     threshold(src, srcThresh, intensityThresh, 255, THRESH_BINARY_INV);
-    // flip(srcThresh, srcFlip, 0);
-    // srcThresh = srcFlip;
+    flip(srcThresh, srcFlip, 0);
+    srcThresh = srcFlip;
     // Lines will be plot on cdst -----------------------------------------
     Mat cdst;
     cvtColor(srcThresh, cdst, CV_GRAY2BGR);
@@ -96,26 +97,29 @@ void map_hough_lines(map_t *map, uint16_t minPoints)
             // cout << "line[" << map->nb_lines - 1 << "]    rho: " << rho << ", theta: " << theta << endl;
 
             /*-----DRAW LINES--------------------------------------------------------------------*/
-            // Point pt1, pt2;
-            // double a = cos(theta), b = sin(theta);
-            // double x0 = a*rho, y0 = b*rho;
-            // pt1.x = cvRound(x0 + map->size_y*(-b));
-            // pt1.y = cvRound(y0 + map->size_x*(a));
-            // pt2.x = cvRound(x0 - map->size_y*(-b));
-            // pt2.y = cvRound(y0 - map->size_x*(a));
-            // line( cdst, pt1, pt2, Scalar(0,0,255), 0.5, CV_AA);
+            Point pt1, pt2;
+            double a = cos(theta), b = sin(theta);
+            double x0 = a*rho, y0 = b*rho;
+            pt1.x = cvRound(x0 + size*(-b));
+            pt1.y = cvRound(y0 + size*(a));
+            pt2.x = cvRound(x0 - size*(-b));
+            pt2.y = cvRound(y0 - size*(a));
+            line( cdst, pt1, pt2, Scalar(0,0,255), 0.5, CV_AA);
             /*-----END DRAW LINES-----------------------------------------------------------------*/
         }
     }
     cout << "nb_lines " << map->nb_lines << "\n"
          << endl;
 
-    // namedWindow("detected lines", WINDOW_NORMAL);
-    // resizeWindow("detected lines", 1500, 1500);
-    // flip before plot because map coordinates and image coordinates have y axis inverted
-    // flip(cdst, flipIm, 0);
-    // imshow("detected lines", flipIm);
-    // waitKey();
+    imwrite( "../../../../../tests/maps/lines.jpg", cdst);
+
+    namedWindow("detected lines", WINDOW_NORMAL);
+    resizeWindow("detected lines", 1500, 1500);
+    //flip before plot because map coordinates and image coordinates have y axis inverted
+    flip(cdst, flipIm, 0);
+    imshow("detected lines", flipIm);
+
+    waitKey();
 }
 
 double compute_incindent_angle(map_t *map, double oa, int ci, int cj, double min_err)
@@ -125,7 +129,7 @@ double compute_incindent_angle(map_t *map, double oa, int ci, int cj, double min
     // double yCell = MAP_WXGX(map, cj);
     double xCell = ci;
     double yCell = cj;
-    cout << "(i,j): " << xCell << ", " << yCell << endl;
+    // cout << "(i,j): " << xCell << ", " << yCell << endl;
 
     // double min_err = 0.3;
     int line_index = -1;
@@ -144,7 +148,7 @@ double compute_incindent_angle(map_t *map, double oa, int ci, int cj, double min
             err = abs(xCell + rho);
         else
             err = abs(yCell - (-xCell * cos(theta) + rho) / sin(theta));
-        cout << "For line[" << i << "]   err " << err << ", minerr " << min_err << endl;
+        // cout << "For line[" << i << "]   err " << err << ", minerr " << min_err << endl;
 
         if (err < min_err)
         {

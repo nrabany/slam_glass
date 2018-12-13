@@ -90,7 +90,7 @@ void map_hough_lines(map_t *map, uint16_t minPoints)
     flip(cdst, flipIm, 0);
     flip(src, src, 0);
 
-    imshow("detected lines", src);
+    imshow("detected lines", flipIm);
     waitKey();
 }
 
