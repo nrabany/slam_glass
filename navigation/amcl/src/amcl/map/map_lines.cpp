@@ -10,14 +10,15 @@
 using namespace cv;
 using namespace std;
 
+/* Find lines in map. Everything is in map coordinates and scale */
 void map_hough_lines(map_t *map, uint16_t minPoints)
 {
     Mat src(map->size_x, map->size_y, CV_8UC1, map->gridData);
 
     // Here get a binary image by thresholding
-    uchar intensityThresh = 200;
-    Mat srcThresh = src;
-    // threshold(src, srcThresh, intensityThresh, 255, THRESH_BINARY);
+    uchar intensityThresh = 99;
+    Mat srcThresh;// = src;
+    threshold(src, srcThresh, intensityThresh, 255, THRESH_BINARY_INV);
 
     //---------------------------------------------------------------------
 
@@ -26,13 +27,15 @@ void map_hough_lines(map_t *map, uint16_t minPoints)
     cout << "before: " << lines.size() << "   \n"
          << endl;
 
-    // Translation factor from origin
-    double origin_trans_fact = sqrt(map->origin_x*map->origin_x + map->origin_y*map->origin_y);
+    // Lines will be plot on cdst -----------------------------------------
+    Mat cdst;
+    cvtColor(srcThresh, cdst, CV_GRAY2BGR);
+    //---------------------------------------------------------------------
 
     for (size_t i = 0; i < lines.size(); i++)
     {
         bool new_group = true;
-        float rho = lines[i][0] * map->scale, theta = lines[i][1];
+        float rho = lines[i][0], theta = lines[i][1];
 
         if (map->nb_lines != 0)
         {
@@ -42,7 +45,7 @@ void map_hough_lines(map_t *map, uint16_t minPoints)
                 double theta_diff = abs(theta - map->lines[j].theta);
                 double rho_add = abs(rho + map->lines[j].rho);
                 // Here adjust parameters to group lines
-                if ((rho_diff < 80 * map->scale && theta_diff < 3 * M_PI / 180) || (rho_add < 80 * map->scale && theta_diff - M_PI < 3 * M_PI / 180))
+                if ((rho_diff < 80 && theta_diff < 3 * M_PI / 180) || (rho_add < 80  && theta_diff - M_PI < 3 * M_PI / 180))
                 {
                     new_group = false;
                     break;
@@ -61,35 +64,54 @@ void map_hough_lines(map_t *map, uint16_t minPoints)
             }
 
             map_line_t mline;
-            mline.rho = rho + origin_trans_fact; // Here translate the line so that center is origin
+            mline.rho = rho;
             mline.theta = theta;
             map->lines[map->nb_lines - 1] = mline;
+
+            /*-----DRAW LINES--------------------------------------------------------------------*/
+            Point pt1, pt2;
+            double a = cos(theta), b = sin(theta);
+            double x0 = a*rho, y0 = b*rho;
+            pt1.x = cvRound(x0 + map->size_y*(-b));
+            pt1.y = cvRound(y0 + map->size_x*(a));
+            pt2.x = cvRound(x0 - map->size_y*(-b));
+            pt2.y = cvRound(y0 - map->size_x*(a));
+            line( cdst, pt1, pt2, Scalar(0,0,255), 0.5, CV_AA);
+            /*-----END DRAW LINES-----------------------------------------------------------------*/
         }
     }
     cout << "nb_lines " << map->nb_lines << "  \n"
          << endl;
+
+    namedWindow("detected lines", WINDOW_NORMAL);
+    resizeWindow("detected lines", 1500, 1500);
+    /*flip before plot because map coordinates and image coordinates have y axis inverted*/
+    Mat flipIm ;
+    flip(cdst, flipIm, 0);
+    flip(src, src, 0);
+
+    imshow("detected lines", src);
+    waitKey();
 }
 
+/* Compute incindent angle. Everything is in map coordinates and scale because only angle of robot
+ * is used to dtermine incindent angle. */
 double compute_incindent_angle(map_t *map, double oa, int ci, int cj, double min_err)
 {
-    double xCell = ci * map->scale;
-    double yCell = cj * map->scale;
-
     int line_index = -1;
 
     for (int i = 0; i < map->nb_lines; i++)
     {
         double theta = map->lines[i].theta;
         double rho = map->lines[i].rho;
-
         double err = min_err;
 
         if (abs(theta) <= 0.05 || abs(theta - 2 * M_PI) <= 0.05)
-            err = abs(xCell - rho);
+            err = abs(ci - rho);
         else if (abs(theta - M_PI) <= 0.05)
-            err = abs(xCell + rho);
+            err = abs(ci + rho);
         else
-            err = abs(yCell - (-xCell * cos(theta) + rho) / sin(theta));
+            err = abs(cj - (-ci * cos(theta) + rho) / sin(theta));
 
         // cout << "For line[" << i << "]   err " << err << ", minerr " << min_err << endl;
 

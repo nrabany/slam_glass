@@ -1,7 +1,7 @@
 free_thresh: 0.196
 image: Map0.pgm
 negate: 0
-occupied_thresh: 0.350
+occupied_thresh: 0.50
 origin:
 - -100.0
 - -100.0

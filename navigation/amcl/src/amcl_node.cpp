@@ -960,19 +960,19 @@ AmclNode::convertMap( const nav_msgs::OccupancyGrid& map_msg )
     {
       map->cells[i].occ_state = -1;
       map->cells[i].p_glass = -1;
-      map->gridData[i] = 0;
+      map->gridData[i] = 255;
     }
     else if(map_msg.data[i] >= 100)
     {
       map->cells[i].occ_state = +1;
-      map->cells[i].p_glass = (map_msg.data[i]-100)/100.0;
-      map->gridData[i] = 255;
+      map->cells[i].p_glass = (map_msg.data[i]-100)/27.0; // See in map_server/src/image_loader.cpp how it has been stored
+      map->gridData[i] = 0;
     }
     else
     {
       map->cells[i].occ_state = 0;
       map->cells[i].p_glass = -1;
-      map->gridData[i] = 0;
+      map->gridData[i] = 255;
     }
   }
   map_hough_lines(map, 50);

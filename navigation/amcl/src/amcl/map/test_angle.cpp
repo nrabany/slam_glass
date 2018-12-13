@@ -40,12 +40,13 @@ void map_hough_lines(map_t *map, uint16_t minPoints)
     Mat src = imread(filename, 0); 
 
     // Mat src(map->size_x, map->size_y, CV_8UC1, map->gridData);
-
+    cout << "(rows, cols): " << src.rows << ", " << src.cols << endl;
     // Here get a binary image by thresholding
     uchar intensityThresh = 200;
-    Mat srcThresh, flipIm;
+    Mat srcThresh, srcFlip;
     threshold(src, srcThresh, intensityThresh, 255, THRESH_BINARY_INV);
-
+    // flip(srcThresh, srcFlip, 0);
+    // srcThresh = srcFlip;
     // Lines will be plot on cdst -----------------------------------------
     Mat cdst;
     cvtColor(srcThresh, cdst, CV_GRAY2BGR);
@@ -92,7 +93,7 @@ void map_hough_lines(map_t *map, uint16_t minPoints)
             mline.theta = theta;
             map->lines[map->nb_lines - 1] = mline;
 
-            cout << "line[" << map->nb_lines - 1 << "]    rho: " << rho << ", theta: " << theta << endl;
+            // cout << "line[" << map->nb_lines - 1 << "]    rho: " << rho << ", theta: " << theta << endl;
 
             /*-----DRAW LINES--------------------------------------------------------------------*/
             // Point pt1, pt2;
