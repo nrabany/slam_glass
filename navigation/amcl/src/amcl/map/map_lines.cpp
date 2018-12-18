@@ -17,7 +17,7 @@ void map_hough_lines(map_t *map, uint16_t minPoints)
 
     // Here get a binary image by thresholding
     uchar intensityThresh = 99;
-    Mat srcThresh;// = src;
+    Mat srcThresh; // = src;
     threshold(src, srcThresh, intensityThresh, 255, THRESH_BINARY_INV);
 
     //---------------------------------------------------------------------
@@ -37,19 +37,16 @@ void map_hough_lines(map_t *map, uint16_t minPoints)
         bool new_group = true;
         float rho = lines[i][0], theta = lines[i][1];
 
-        if (map->nb_lines != 0)
+        for (int j = 0; j < map->nb_lines; j++)
         {
-            for (int j = 0; j < map->nb_lines; j++)
+            double rho_diff = abs(rho - map->lines[j].rho);
+            double theta_diff = abs(theta - map->lines[j].theta);
+            double rho_add = abs(rho + map->lines[j].rho);
+            // Here adjust parameters to group lines
+            if ((rho_diff < 80 && theta_diff < 3 * M_PI / 180) || (rho_add < 80 && theta_diff - M_PI < 3 * M_PI / 180))
             {
-                double rho_diff = abs(rho - map->lines[j].rho);
-                double theta_diff = abs(theta - map->lines[j].theta);
-                double rho_add = abs(rho + map->lines[j].rho);
-                // Here adjust parameters to group lines
-                if ((rho_diff < 80 && theta_diff < 3 * M_PI / 180) || (rho_add < 80  && theta_diff - M_PI < 3 * M_PI / 180))
-                {
-                    new_group = false;
-                    break;
-                }
+                new_group = false;
+                break;
             }
         }
 
@@ -71,27 +68,31 @@ void map_hough_lines(map_t *map, uint16_t minPoints)
             /*-----DRAW LINES--------------------------------------------------------------------*/
             Point pt1, pt2;
             double a = cos(theta), b = sin(theta);
-            double x0 = a*rho, y0 = b*rho;
-            pt1.x = cvRound(x0 + map->size_y*(-b));
-            pt1.y = cvRound(y0 + map->size_x*(a));
-            pt2.x = cvRound(x0 - map->size_y*(-b));
-            pt2.y = cvRound(y0 - map->size_x*(a));
-            line( cdst, pt1, pt2, Scalar(0,0,255), 0.5, CV_AA);
+            double x0 = a * rho, y0 = b * rho;
+            pt1.x = cvRound(x0 + map->size_y * (-b));
+            pt1.y = cvRound(y0 + map->size_x * (a));
+            pt2.x = cvRound(x0 - map->size_y * (-b));
+            pt2.y = cvRound(y0 - map->size_x * (a));
+            line(cdst, pt1, pt2, Scalar(0, 0, 255), 0.5, CV_AA);
             /*-----END DRAW LINES-----------------------------------------------------------------*/
         }
     }
     cout << "nb_lines " << map->nb_lines << "  \n"
          << endl;
 
-    namedWindow("detected lines", WINDOW_NORMAL);
-    resizeWindow("detected lines", 1500, 1500);
-    /*flip before plot because map coordinates and image coordinates have y axis inverted*/
-    Mat flipIm ;
-    flip(cdst, flipIm, 0);
-    flip(src, src, 0);
+    // namedWindow("detected lines", WINDOW_NORMAL);
+    // resizeWindow("detected lines", 1500, 1500);
+    // namedWindow("flipped detected lines", WINDOW_NORMAL);
+    // resizeWindow("flipped detected lines", 1500, 1500);
+    // /*flip before plot because map coordinates and image coordinates have y axis inverted*/
+    // Mat flipIm;
+    // flip(cdst, flipIm, 0);
+    // flip(src, src, 0);
 
-    imshow("detected lines", flipIm);
-    waitKey();
+    // imshow("detected lines", cdst);
+    // imshow("flipped detected lines", flipIm);
+
+    // waitKey();
 }
 
 /* Compute incindent angle. Everything is in map coordinates and scale because only angle of robot
@@ -104,6 +105,7 @@ double compute_incindent_angle(map_t *map, double oa, int ci, int cj, double min
     {
         double theta = map->lines[i].theta;
         double rho = map->lines[i].rho;
+
         double err = min_err;
 
         if (abs(theta) <= 0.05 || abs(theta - 2 * M_PI) <= 0.05)
@@ -112,6 +114,8 @@ double compute_incindent_angle(map_t *map, double oa, int ci, int cj, double min
             err = abs(ci + rho);
         else
             err = abs(cj - (-ci * cos(theta) + rho) / sin(theta));
+
+        // double err = abs(cj * sin(theta) - (-ci * cos(theta) + rho));
 
         // cout << "For line[" << i << "]   err " << err << ", minerr " << min_err << endl;
 
@@ -128,7 +132,7 @@ double compute_incindent_angle(map_t *map, double oa, int ci, int cj, double min
         // cout << "return" << endl;
         return -1;
     }
-    // Here get absolute value and kepp incindent angle between 0° and 90°
+    // Here get absolute value and keep incindent angle between 0° and 90°
     double incindent_angle = abs(map->lines[line_index].theta - oa);
     while (incindent_angle > M_PI / 2)
     {
@@ -137,6 +141,33 @@ double compute_incindent_angle(map_t *map, double oa, int ci, int cj, double min
     }
 
     return incindent_angle;
+}
+
+double compute_std(double angle, double range)
+{
+    double angle_deg = angle * 180 / M_PI;
+    double max_angle = (range<=3)? -3.05 * range + 11.6 : 1;
+    if (angle_deg != -1 && angle_deg < max_angle)
+        return 0.00135 * range + 0.0015 * angle_deg + 0.00105;
+
+    return 0.0014;
+}
+
+double compute_p_can_see(double angle, double range)
+{
+    if(angle != -1 && range == 0)
+        return 0.5;
+
+    double max_angle = (range<=3) ? -3.05 * range + 11.6 : 1;
+    max_angle = max_angle * M_PI / 180.0;
+    if (angle < max_angle)
+        return 1;
+    if (angle > 6 * max_angle)
+        return 0;
+
+    double lambda = 7.0 * range;
+    double angle0 = max_angle * (1 + 2 / range);
+    return 1 - 1 / (1+exp(-lambda*(angle-angle0)));
 }
 
 /*

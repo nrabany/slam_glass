@@ -147,7 +147,7 @@ double map_calc_range(map_t *map, double ox, double oy, double oa, double max_ra
 cells_index_t map_find_cells(map_t *map, double ox, double oy, double oa, double max_range);
 
 // Compute range between a position and a cell
-double compute_range(map_t *map, double ox, double oy, int cell_i, int cell_j);
+double compute_range(map_t *map, double ox, double oy, int cell_i, int cell_j, double max_range);
 
 // Return the probability of being a glass for a cell
 double get_glass_prob(map_t *map, int ci, int cj);
@@ -160,6 +160,9 @@ void map_hough_lines(map_t* map, uint16_t minPoints);
 
 double compute_incindent_angle(map_t* map, double oa, int ci, int cj, double min_err);
 
+double compute_std(double angle, double range);
+
+double compute_p_can_see(double angle, double range);
 
 /**************************************************************************
  * GUI/diagnostic functions

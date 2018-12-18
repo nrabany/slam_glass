@@ -36,7 +36,6 @@ map_t *map_alloc(void)
 void map_hough_lines(map_t *map, uint16_t minPoints)
 {
     const char* filename = "../../../../../tests/maps/Map0.pgm";
-    //  const char* filename = "../../../../../tests/maps/ex1.pgm";
     Mat src = imread(filename, 0); 
     double size = 4000;
 
@@ -46,8 +45,10 @@ void map_hough_lines(map_t *map, uint16_t minPoints)
     uchar intensityThresh = 200;
     Mat srcThresh, flipIm, srcFlip;
     threshold(src, srcThresh, intensityThresh, 255, THRESH_BINARY_INV);
-    flip(srcThresh, srcFlip, 0);
-    srcThresh = srcFlip;
+
+    // flip(srcThresh, srcFlip, 0);
+    // srcThresh = srcFlip;
+    
     // Lines will be plot on cdst -----------------------------------------
     Mat cdst;
     cvtColor(srcThresh, cdst, CV_GRAY2BGR);
@@ -58,24 +59,26 @@ void map_hough_lines(map_t *map, uint16_t minPoints)
     cout << "before: " << lines.size() << "\n"
          << endl;
 
+    vector<uint8_t> lines_in_group(lines.size());
+
     for (size_t i = 0; i < lines.size(); i++)
     {
         bool new_group = true;
-        float rho = lines[i][0] * map->scale, theta = lines[i][1];
+        float rho = lines[i][0], theta = lines[i][1];
 
-        if (map->nb_lines != 0)
+        for (int j = 0; j < map->nb_lines; j++)
         {
-            for (int j = 0; j < map->nb_lines; j++)
+            double rho_diff = abs(rho - map->lines[j].rho);
+            double theta_diff = abs(theta - map->lines[j].theta);
+            double rho_add = abs(rho + map->lines[j].rho);
+            // Here adjust parameters to group lines
+            if ((rho_diff < 50 && theta_diff < 2 * M_PI / 180) || (rho_add < 50 && theta_diff - M_PI < 2 * M_PI / 180))
             {
-                double rho_diff = abs(rho - map->lines[j].rho);
-                double theta_diff = abs(theta - map->lines[j].theta);
-                double rho_add = abs(rho + map->lines[j].rho);
-                // Here adjust parameters to group lines
-                if ((rho_diff < 80 * map->scale && theta_diff < 3 * M_PI / 180) || (rho_add < 80 * map->scale && theta_diff - M_PI < 3 * M_PI / 180))
-                {
-                    new_group = false;
-                    break;
-                }
+                new_group = false;
+                map->lines[j].rho = (map->lines[j].rho*lines_in_group[j] + rho) / (lines_in_group[j] + 1);
+                map->lines[j].theta = (map->lines[j].theta*lines_in_group[j] + theta) / (lines_in_group[j] + 1);
+                lines_in_group[j] += 1;
+                break;
             }
         }
 
@@ -142,10 +145,8 @@ double compute_incindent_angle(map_t *map, double oa, int ci, int cj, double min
 
         double err = min_err;
 
-        if (abs(theta) <= 0.05 || abs(theta - 2 * M_PI) <= 0.05)
-            err = abs(xCell - rho);
-        else if (abs(theta - M_PI) <= 0.05)
-            err = abs(xCell + rho);
+        if (abs(theta) <= 0.05 || abs(theta - 2 * M_PI) <= 0.05 || abs(theta - M_PI) <= 0.05)
+            err = abs(-xCell * cos(theta) - rho);
         else
             err = abs(yCell - (-xCell * cos(theta) + rho) / sin(theta));
         // cout << "For line[" << i << "]   err " << err << ", minerr " << min_err << endl;
@@ -214,12 +215,16 @@ int main()
     // waitKey();
 
     map_hough_lines(map, 50);
-    double angle = compute_incindent_angle(map, M_PI * 3 / 4 * 0, 50, 5, 3);
+
+    double angle = compute_incindent_angle(map,  M_PI * 3 / 8 , 60, 60, 3);
+
     if (angle == -1)
         cout << "angle: " << angle << endl;
     else
         cout << "angle: " << angle / M_PI * 180 << endl;
     return 1;
+
+
     /*uint8_t data[] = {255,255,255,255,255, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 255,255,255,255,255};
     uint8_t uarr[] = {1,2,3,4,5,6,7,8,9,10,11,12};
     int rows = 5;

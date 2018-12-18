@@ -45,6 +45,7 @@
     <param name="odom_alpha4"       value="$(arg odom_alpha4)"/>
     <param name="laser_model_type"  value="beam"/>
     <param name="laser_max_beams"   value="15"/>
+    <param name="max_particles"    value="5000"/>
 
     <remap from="/scan" to="/first"/>
   </node>
