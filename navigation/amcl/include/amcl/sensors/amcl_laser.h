@@ -35,6 +35,10 @@
 namespace amcl
 {
 
+// Values
+long double pz_mean;
+uint64_t nb_pz;
+
 typedef enum
 {
   LASER_MODEL_BEAM,

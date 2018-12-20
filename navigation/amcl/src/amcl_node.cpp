@@ -976,6 +976,9 @@ AmclNode::convertMap( const nav_msgs::OccupancyGrid& map_msg )
     }
   }
   map_hough_lines(map, 40);
+
+  pz_mean = 0.0;
+  nb_pz = 0;
   return map;
 }
 

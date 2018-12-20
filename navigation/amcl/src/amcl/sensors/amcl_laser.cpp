@@ -163,6 +163,9 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
 
   total_weight = 0.0;
 
+  cout << "p = " << pz_mean << " " << endl;
+
+
   // Compute the sample weights
   for (j = 0; j < set->sample_count; j++)
   {
@@ -191,24 +194,24 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
                                        cells_index.i_second, cells_index.j_second, data->range_max);
       p_glass = get_glass_prob(self->map, cells_index.i_first, cells_index.j_first);
 
-      // inc_angle = compute_incindent_angle(self->map, pose.v[2] + obs_bearing, cells_index.i_first, cells_index.j_first, 30);
+      inc_angle = compute_incindent_angle(self->map, pose.v[2] + obs_bearing, cells_index.i_first, cells_index.j_first, 30);
 
-      // std_glass = compute_std(inc_angle, map_range);
+      std_glass = compute_std(inc_angle, map_range);
 
-      // p_can_see = compute_p_can_see(inc_angle, map_range);
+      p_can_see = compute_p_can_see(inc_angle, map_range);
 
       pz = 0.0;
 
       // Part 1a: good, but noisy, hit non glass
       z = obs_range - map_range;
-      pz += self->z_hit * exp(-(z * z) / (2 * self->sigma_hit * self->sigma_hit));// * (1 - p_glass);
+      pz += self->z_hit * exp(-(z * z) / (2 * self->sigma_hit * self->sigma_hit)) * (1 - p_glass);
 
       // Part 1b: good, but noisy, hit glass
-      // pz += self->z_hit * exp(-(z * z) / (2 * self->sigma_hit * self->sigma_hit)) * p_glass * p_can_see;
+      pz += self->z_hit * exp(-(z * z) / (2 * self->sigma_hit * self->sigma_hit)) * p_glass * p_can_see;
 
       // Part 1c: good, but noisy, hit behind
       z_behind = obs_range - map_range_behind;
-      // pz += self->z_hit * exp(-(z_behind * z_behind) / (2 * self->sigma_hit * self->sigma_hit)) * p_glass * (1 - p_can_see);
+      pz += self->z_hit * exp(-(z_behind * z_behind) / (2 * self->sigma_hit * self->sigma_hit)) * p_glass * (1 - p_can_see);
 
       // Part 2: short reading from unexpected obstacle (e.g., a person)
       if (z < 0)
@@ -231,6 +234,8 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
 
       assert(pz <= 1.0);
       assert(pz >= 0.0);
+      pz_mean = (pz_mean*nb_pz + pz)/(nb_pz+1);
+      nb_pz += 1;
       //      p *= pz;
       // here we have an ad-hoc weighting scheme for combining beam probs
       // works well, though...

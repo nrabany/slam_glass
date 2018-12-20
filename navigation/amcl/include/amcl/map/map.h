@@ -42,7 +42,7 @@ struct _rtk_fig_t;
 // Limits
 #define MAP_WIFI_MAX_LEVELS 8
 
-  
+
 // Description for a single map cell.
 typedef struct
 {
