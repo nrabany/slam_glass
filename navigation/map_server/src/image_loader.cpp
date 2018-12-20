@@ -147,7 +147,9 @@ loadMapFromFile(nav_msgs::GetMap::Response* resp,
       // produce a map with cell (0,0) in the lower-left corner.
       if(occ > occ_th) {
         if(mode==GLASS_PROB)
-          value = color_avg + 100;
+        {
+          value = 100 + static_cast<int>(color_avg*27.0/100.0); // value is between 100 and 127
+        }
         else
           value = +100;
       }

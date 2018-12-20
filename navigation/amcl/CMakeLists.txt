@@ -57,6 +57,7 @@ add_library(amcl_pf
 
 add_library(amcl_map
                     src/amcl/map/map.c
+		    src/amcl/map/map_lines.cpp
                     src/amcl/map/map_cspace.cpp
                     src/amcl/map/map_range.c
                     src/amcl/map/map_store.c
@@ -78,6 +79,10 @@ target_link_libraries(amcl
     ${Boost_LIBRARIES}
     ${catkin_LIBRARIES}
 )
+
+find_package(OpenCV REQUIRED)
+include_directories(${OpenCV_INCLUDE_DIRS})
+target_link_libraries(amcl_map ${OpenCV_LIBRARIES})
 
 install( TARGETS
     amcl amcl_sensors amcl_map amcl_pf

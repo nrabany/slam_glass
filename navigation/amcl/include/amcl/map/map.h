@@ -42,7 +42,7 @@ struct _rtk_fig_t;
 // Limits
 #define MAP_WIFI_MAX_LEVELS 8
 
-  
+
 // Description for a single map cell.
 typedef struct
 {
@@ -60,6 +60,16 @@ typedef struct
 
 } map_cell_t;
 
+// Description for a single map line.
+typedef struct
+{
+  // Angle
+  double theta;
+
+  // Range
+  double rho;
+
+} map_line_t;
 
 // Description for a map
 typedef struct
@@ -75,6 +85,14 @@ typedef struct
   
   // The map data, stored as a grid
   map_cell_t *cells;
+
+  // The map lines, stored as a grid
+  map_line_t *lines;
+
+  // The number of lines 
+  int nb_lines;
+
+  uint8_t *gridData;
 
   // Max distance at which we care about obstacles, for constructing
   // likelihood field
@@ -129,11 +147,22 @@ double map_calc_range(map_t *map, double ox, double oy, double oa, double max_ra
 cells_index_t map_find_cells(map_t *map, double ox, double oy, double oa, double max_range);
 
 // Compute range between a position and a cell
-double compute_range(map_t *map, double ox, double oy, int cell_i, int cell_j);
+double compute_range(map_t *map, double ox, double oy, int cell_i, int cell_j, double max_range);
 
 // Return the probability of being a glass for a cell
 double get_glass_prob(map_t *map, int ci, int cj);
 
+/**************************************************************************
+ * Incindent angle functions
+ **************************************************************************/
+
+void map_hough_lines(map_t* map, uint16_t minPoints);
+
+double compute_incindent_angle(map_t* map, double oa, int ci, int cj, double min_err);
+
+double compute_std(double angle, double range);
+
+double compute_p_can_see(double angle, double range);
 
 /**************************************************************************
  * GUI/diagnostic functions
@@ -147,7 +176,6 @@ void map_draw_cspace(map_t *map, struct _rtk_fig_t *fig);
 
 // Draw a wifi map
 void map_draw_wifi(map_t *map, struct _rtk_fig_t *fig, int index);
-
 
 /**************************************************************************
  * Map manipulation macros

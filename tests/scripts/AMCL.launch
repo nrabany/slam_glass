@@ -31,9 +31,9 @@
   <node  name="tf_base_laser" pkg="tf" type="static_transform_publisher" args="0.08 0 0 0 0 0 /base_link /laser 1" />
 
   <!-- Processing nodes -->
-  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_path)$(arg map_name).yaml" />
+  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_path)$(arg map_name).yaml" output="screen"/>
 
-  <node name="amcl" pkg="amcl" type="amcl">
+  <node name="amcl" pkg="amcl" type="amcl" output="screen">
     <rosparam command="load" file="$(arg bag_path)/initial_conditions/$(arg bag_name).yaml" />
     <param name="update_min_d"          value="$(arg update_min_d)" />
     <param name="recovery_alpha_slow"   value="$(arg recovery_alpha_slow)" />
@@ -45,6 +45,7 @@
     <param name="odom_alpha4"       value="$(arg odom_alpha4)"/>
     <param name="laser_model_type"  value="beam"/>
     <param name="laser_max_beams"   value="15"/>
+    <param name="max_particles"     value="1500"/>
 
     <remap from="/scan" to="/first"/>
   </node>

@@ -30,7 +30,6 @@
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
-#include "opencv2/core/version.hpp"
 #include "amcl/map/map.h"
 
 // Extract a single range reading from the map.  Unknown cells and/or
@@ -267,15 +266,16 @@ cells_index_t map_find_cells(map_t *map, double ox, double oy, double oa, double
 }
 
 // Compute range between a pose and a cell by giving the cell index
-double compute_range(map_t *map, double ox, double oy, int ci, int cj)
+double compute_range(map_t *map, double ox, double oy, int ci, int cj, double max_range)
 {
   int x0 = MAP_GXWX(map,ox);
   int y0 = MAP_GYWY(map,oy);
-  return sqrt((ci-x0)*(ci-x0) + (cj-y0)*(cj-y0)) * map->scale;
+  double range = sqrt((ci-x0)*(ci-x0) + (cj-y0)*(cj-y0)) * map->scale;
+  return range > max_range? max_range : range; 
 }
 
 // Return the probability of being a glass for a cell
 double get_glass_prob(map_t *map, int ci, int cj)
 {
-  return map->cells[MAP_INDEX(map,ci,cj)].p_glass;
+  return (map->cells[MAP_INDEX(map,ci,cj)].p_glass == -1)? 0.0 : map->cells[MAP_INDEX(map,ci,cj)].p_glass;
 }
