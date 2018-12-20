@@ -38,25 +38,25 @@
 double map_calc_range(map_t *map, double ox, double oy, double oa, double max_range)
 {
   // Bresenham raytracing
-  int x0,x1,y0,y1;
-  int x,y;
+  int x0, x1, y0, y1;
+  int x, y;
   int xstep, ystep;
   char steep;
   int tmp;
   int deltax, deltay, error, deltaerr;
 
-  x0 = MAP_GXWX(map,ox);
-  y0 = MAP_GYWY(map,oy);
-  
-  x1 = MAP_GXWX(map,ox + max_range * cos(oa));
-  y1 = MAP_GYWY(map,oy + max_range * sin(oa));
+  x0 = MAP_GXWX(map, ox);
+  y0 = MAP_GYWY(map, oy);
 
-  if(abs(y1-y0) > abs(x1-x0))
+  x1 = MAP_GXWX(map, ox + max_range * cos(oa));
+  y1 = MAP_GYWY(map, oy + max_range * sin(oa));
+
+  if (abs(y1 - y0) > abs(x1 - x0))
     steep = 1;
   else
     steep = 0;
 
-  if(steep)
+  if (steep)
   {
     tmp = x0;
     x0 = y0;
@@ -67,53 +67,53 @@ double map_calc_range(map_t *map, double ox, double oy, double oa, double max_ra
     y1 = tmp;
   }
 
-  deltax = abs(x1-x0);
-  deltay = abs(y1-y0);
+  deltax = abs(x1 - x0);
+  deltay = abs(y1 - y0);
   error = 0;
   deltaerr = deltay;
 
   x = x0;
   y = y0;
 
-  if(x0 < x1)
+  if (x0 < x1)
     xstep = 1;
   else
     xstep = -1;
-  if(y0 < y1)
+  if (y0 < y1)
     ystep = 1;
   else
     ystep = -1;
 
-  if(steep)
+  if (steep)
   {
-    if(!MAP_VALID(map,y,x) || map->cells[MAP_INDEX(map,y,x)].occ_state > -1)
-      return sqrt((x-x0)*(x-x0) + (y-y0)*(y-y0)) * map->scale;
+    if (!MAP_VALID(map, y, x) || map->cells[MAP_INDEX(map, y, x)].occ_state > -1)
+      return sqrt((x - x0) * (x - x0) + (y - y0) * (y - y0)) * map->scale;
   }
   else
   {
-    if(!MAP_VALID(map,x,y) || map->cells[MAP_INDEX(map,x,y)].occ_state > -1)
-      return sqrt((x-x0)*(x-x0) + (y-y0)*(y-y0)) * map->scale;
+    if (!MAP_VALID(map, x, y) || map->cells[MAP_INDEX(map, x, y)].occ_state > -1)
+      return sqrt((x - x0) * (x - x0) + (y - y0) * (y - y0)) * map->scale;
   }
 
-  while(x != (x1 + xstep * 1))
+  while (x != (x1 + xstep * 1))
   {
     x += xstep;
     error += deltaerr;
-    if(2*error >= deltax)
+    if (2 * error >= deltax)
     {
       y += ystep;
       error -= deltax;
     }
 
-    if(steep)
+    if (steep)
     {
-      if(!MAP_VALID(map,y,x) || map->cells[MAP_INDEX(map,y,x)].occ_state > -1)
-        return sqrt((x-x0)*(x-x0) + (y-y0)*(y-y0)) * map->scale;
+      if (!MAP_VALID(map, y, x) || map->cells[MAP_INDEX(map, y, x)].occ_state > -1)
+        return sqrt((x - x0) * (x - x0) + (y - y0) * (y - y0)) * map->scale;
     }
     else
     {
-      if(!MAP_VALID(map,x,y) || map->cells[MAP_INDEX(map,x,y)].occ_state > -1)
-        return sqrt((x-x0)*(x-x0) + (y-y0)*(y-y0)) * map->scale;
+      if (!MAP_VALID(map, x, y) || map->cells[MAP_INDEX(map, x, y)].occ_state > -1)
+        return sqrt((x - x0) * (x - x0) + (y - y0) * (y - y0)) * map->scale;
     }
   }
   return max_range;
@@ -123,8 +123,8 @@ double map_calc_range(map_t *map, double ox, double oy, double oa, double max_ra
 cells_index_t map_find_cells(map_t *map, double ox, double oy, double oa, double max_range)
 {
   // Bresenham raytracing
-  int x0,x1,y0,y1;
-  int x,y;
+  int x0, x1, y0, y1;
+  int x, y;
   int xstep, ystep;
   char steep;
   int tmp;
@@ -135,11 +135,11 @@ cells_index_t map_find_cells(map_t *map, double ox, double oy, double oa, double
 
   cells_index_t nearest_cells;
 
-  x0 = MAP_GXWX(map,ox);
-  y0 = MAP_GYWY(map,oy);
-  
-  x1 = MAP_GXWX(map,ox + max_range * cos(oa));
-  y1 = MAP_GYWY(map,oy + max_range * sin(oa));
+  x0 = MAP_GXWX(map, ox);
+  y0 = MAP_GYWY(map, oy);
+
+  x1 = MAP_GXWX(map, ox + max_range * cos(oa));
+  y1 = MAP_GYWY(map, oy + max_range * sin(oa));
 
   // Initialize the cells to the ones corresponding to maximum range
   nearest_cells.i_first = x1;
@@ -147,12 +147,12 @@ cells_index_t map_find_cells(map_t *map, double ox, double oy, double oa, double
   nearest_cells.i_second = x1;
   nearest_cells.j_second = y1;
 
-  if(abs(y1-y0) > abs(x1-x0))
+  if (abs(y1 - y0) > abs(x1 - x0))
     steep = 1;
   else
     steep = 0;
 
-  if(steep)
+  if (steep)
   {
     tmp = x0;
     x0 = y0;
@@ -163,71 +163,79 @@ cells_index_t map_find_cells(map_t *map, double ox, double oy, double oa, double
     y1 = tmp;
   }
 
-  deltax = abs(x1-x0);
-  deltay = abs(y1-y0);
+  deltax = abs(x1 - x0);
+  deltay = abs(y1 - y0);
   error = 0;
   deltaerr = deltay;
 
   x = x0;
   y = y0;
 
-  if(x0 < x1)
+  if (x0 < x1)
     xstep = 1;
   else
     xstep = -1;
-  if(y0 < y1)
+  if (y0 < y1)
     ystep = 1;
   else
     ystep = -1;
 
-  if(steep)
+  if (steep)
   {
-    if(!MAP_VALID(map,y,x) || map->cells[MAP_INDEX(map,y,x)].occ_state > -1)
-      {
-        nearest_cells.i_first = y;
-        nearest_cells.j_first = x;
-        ncells_found += 1;
-        same_obstacle = 1;
-      }
+    if (!MAP_VALID(map, y, x) || map->cells[MAP_INDEX(map, y, x)].occ_state > -1)
+    {
+      nearest_cells.i_first = y;
+      nearest_cells.j_first = x;
+      ncells_found += 1;
+      same_obstacle = 1;
+    }
   }
   else
   {
-    if(!MAP_VALID(map,x,y) || map->cells[MAP_INDEX(map,x,y)].occ_state > -1)
-      {
-        nearest_cells.i_first = x;
-        nearest_cells.j_first = y;
-        ncells_found += 1;
-        same_obstacle = 1;
-      }
-  }    
+    if (!MAP_VALID(map, x, y) || map->cells[MAP_INDEX(map, x, y)].occ_state > -1)
+    {
+      nearest_cells.i_first = x;
+      nearest_cells.j_first = y;
+      ncells_found += 1;
+      same_obstacle = 1;
+    }
+  }
 
-  while(x != (x1 + xstep * 1))
+  while (x != (x1 + xstep * 1))
   {
     x += xstep;
     error += deltaerr;
-    if(2*error >= deltax)
+    if (2 * error >= deltax)
     {
       y += ystep;
       error -= deltax;
     }
 
-    if(steep)
+    if (steep)
     {
-      if(!MAP_VALID(map,y,x) || map->cells[MAP_INDEX(map,y,x)].occ_state > -1)
+      if (!MAP_VALID(map, y, x) || map->cells[MAP_INDEX(map, y, x)].occ_state > -1)
       {
-        if(ncells_found == 0)
+        if (ncells_found == 0)
         {
           nearest_cells.i_first = y;
           nearest_cells.j_first = x;
           ncells_found += 1;
           same_obstacle = 1;
         }
-        else 
+        else
         {
-          if(same_obstacle == 0)
+          if (same_obstacle == 0)
           {
-            nearest_cells.i_second = y;
-            nearest_cells.j_second = x;
+            if (map->cells[MAP_INDEX(map, y, x)].occ_state == 0)
+            {
+              nearest_cells.i_second = 5000;
+              nearest_cells.j_second = 5000;
+            }
+            else
+            {
+              nearest_cells.i_second = x;
+              nearest_cells.j_second = y;
+            }
             ncells_found += 1;
           }
         }
@@ -235,31 +243,39 @@ cells_index_t map_find_cells(map_t *map, double ox, double oy, double oa, double
     }
     else
     {
-      if(!MAP_VALID(map,x,y) || map->cells[MAP_INDEX(map,x,y)].occ_state > -1)
+      if (!MAP_VALID(map, x, y) || map->cells[MAP_INDEX(map, x, y)].occ_state > -1)
       {
-        if(ncells_found == 0)
+        if (ncells_found == 0)
         {
           nearest_cells.i_first = x;
           nearest_cells.j_first = y;
           ncells_found += 1;
           same_obstacle = 1;
         }
-        else 
+        else
         {
-          if(same_obstacle == 0)
+          if (same_obstacle == 0)
           {
-            nearest_cells.i_second = x;
-            nearest_cells.j_second = y;
+            if (map->cells[MAP_INDEX(map, y, x)].occ_state == 0)
+            {
+              nearest_cells.i_second = 5000;
+              nearest_cells.j_second = 5000;
+            }
+            else
+            {
+              nearest_cells.i_second = x;
+              nearest_cells.j_second = y;
+            }
             ncells_found += 1;
           }
         }
       }
-    } 
+    }
 
-    if(!MAP_VALID(map,y,x) || map->cells[MAP_INDEX(map,y,x)].occ_state <= 0)
+    if (!MAP_VALID(map, y, x) || map->cells[MAP_INDEX(map, y, x)].occ_state <= 0)
       same_obstacle = 0;
 
-    if(ncells_found == 2)
+    if (ncells_found == 2)
       return nearest_cells;
   }
   return nearest_cells;
@@ -268,14 +284,16 @@ cells_index_t map_find_cells(map_t *map, double ox, double oy, double oa, double
 // Compute range between a pose and a cell by giving the cell index
 double compute_range(map_t *map, double ox, double oy, int ci, int cj, double max_range)
 {
-  int x0 = MAP_GXWX(map,ox);
-  int y0 = MAP_GYWY(map,oy);
-  double range = sqrt((ci-x0)*(ci-x0) + (cj-y0)*(cj-y0)) * map->scale;
-  return range > max_range? max_range : range; 
+  if (ci == 5000 && cj == 5000)
+    return max_range;
+  int x0 = MAP_GXWX(map, ox);
+  int y0 = MAP_GYWY(map, oy);
+  double range = sqrt((ci - x0) * (ci - x0) + (cj - y0) * (cj - y0)) * map->scale;
+  return range > max_range ? max_range : range;
 }
 
 // Return the probability of being a glass for a cell
 double get_glass_prob(map_t *map, int ci, int cj)
 {
-  return (map->cells[MAP_INDEX(map,ci,cj)].p_glass == -1)? 0.0 : map->cells[MAP_INDEX(map,ci,cj)].p_glass;
+  return (map->cells[MAP_INDEX(map, ci, cj)].p_glass == -1) ? 0.0 : map->cells[MAP_INDEX(map, ci, cj)].p_glass;
 }
