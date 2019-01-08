@@ -38,6 +38,7 @@
 using namespace amcl;
 
 #include <iostream>
+#include <fstream>
 using namespace std;
 #include "ros/ros.h"
 
@@ -165,7 +166,6 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
 
   cout << "p = " << pz_mean << " " << endl;
 
-
   // Compute the sample weights
   for (j = 0; j < set->sample_count; j++)
   {
@@ -183,6 +183,7 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
       obs_range = data->ranges[i][0];
       obs_bearing = data->ranges[i][1];
 
+      bool NICOLAS_METHOD = true;
       // Compute the range according to the map
       // map_range = map_calc_range(self->map, pose.v[0], pose.v[1],
       //                            pose.v[2] + obs_bearing, data->range_max);
@@ -190,28 +191,35 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
                                    pose.v[2] + obs_bearing, data->range_max);
       map_range = compute_range(self->map, pose.v[0], pose.v[1],
                                 cells_index.i_first, cells_index.j_first, data->range_max);
-      map_range_behind = compute_range(self->map, pose.v[0], pose.v[1],
-                                       cells_index.i_second, cells_index.j_second, data->range_max);
-      p_glass = get_glass_prob(self->map, cells_index.i_first, cells_index.j_first);
 
-      inc_angle = compute_incindent_angle(self->map, pose.v[2] + obs_bearing, cells_index.i_first, cells_index.j_first, 30);
+      if (NICOLAS_METHOD == true)
+      {
+        map_range_behind = compute_range(self->map, pose.v[0], pose.v[1],
+                                         cells_index.i_second, cells_index.j_second, data->range_max);
+        p_glass = get_glass_prob(self->map, cells_index.i_first, cells_index.j_first);
 
-      std_glass = compute_std(inc_angle, map_range);
+        inc_angle = compute_incindent_angle(self->map, pose.v[2] + obs_bearing, cells_index.i_first, cells_index.j_first, 30);
 
-      p_can_see = compute_p_can_see(inc_angle, map_range);
+        std_glass = compute_std(inc_angle, map_range);
 
+        p_can_see = compute_p_can_see_wide(inc_angle, map_range);
+      }
       pz = 0.0;
 
       // Part 1a: good, but noisy, hit non glass
       z = obs_range - map_range;
-      pz += self->z_hit * exp(-(z * z) / (2 * self->sigma_hit * self->sigma_hit)) * (1 - p_glass);
+      if (NICOLAS_METHOD == false)
+        pz += self->z_hit * exp(-(z * z) / (2 * self->sigma_hit * self->sigma_hit));
+      else
+      {
+        pz += self->z_hit * exp(-(z * z) / (2 * self->sigma_hit * self->sigma_hit)) * (1 - p_glass);
+        // Part 1b: good, but noisy, hit glass
+        pz += self->z_hit * exp(-(z * z) / (2 * self->sigma_hit * self->sigma_hit)) * p_glass * p_can_see;
 
-      // Part 1b: good, but noisy, hit glass
-      pz += self->z_hit * exp(-(z * z) / (2 * self->sigma_hit * self->sigma_hit)) * p_glass * p_can_see;
-
-      // Part 1c: good, but noisy, hit behind
-      z_behind = obs_range - map_range_behind;
-      pz += self->z_hit * exp(-(z_behind * z_behind) / (2 * self->sigma_hit * self->sigma_hit)) * p_glass * (1 - p_can_see);
+        // Part 1c: good, but noisy, hit behind
+        z_behind = obs_range - map_range_behind;
+        pz += self->z_hit * exp(-(z_behind * z_behind) / (2 * self->sigma_hit * self->sigma_hit)) * p_glass * (1 - p_can_see);
+      }
 
       // Part 2: short reading from unexpected obstacle (e.g., a person)
       if (z < 0)
@@ -234,7 +242,7 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
 
       assert(pz <= 1.0);
       assert(pz >= 0.0);
-      pz_mean = (pz_mean*nb_pz + pz)/(nb_pz+1);
+      pz_mean = (pz_mean * nb_pz + pz) / (nb_pz + 1);
       nb_pz += 1;
       //      p *= pz;
       // here we have an ad-hoc weighting scheme for combining beam probs

@@ -146,7 +146,7 @@ double compute_incindent_angle(map_t *map, double oa, int ci, int cj, double min
 double compute_std(double angle, double range)
 {
     double angle_deg = angle * 180 / M_PI;
-    double max_angle = (range<=3)? -3.05 * range + 11.6 : 1;
+    double max_angle = (range <= 3) ? -3.05 * range + 11.6 : 1;
     if (angle_deg != -1 && angle_deg < max_angle)
         return 0.00135 * range + 0.0015 * angle_deg + 0.00105;
 
@@ -155,10 +155,10 @@ double compute_std(double angle, double range)
 
 double compute_p_can_see(double angle, double range)
 {
-    if(angle != -1 && range == 0)
+    if (angle != -1 && range == 0)
         return 0.5;
 
-    double max_angle = (range<=3) ? -3.05 * range + 11.6 : 1;
+    double max_angle = (range <= 3) ? -3.05 * range + 11.6 : 1;
     max_angle = max_angle * M_PI / 180.0;
     if (angle < max_angle)
         return 1;
@@ -167,7 +167,20 @@ double compute_p_can_see(double angle, double range)
 
     double lambda = 7.0 * range;
     double angle0 = max_angle * (1 + 2 / range);
-    return 1 - 1 / (1+exp(-lambda*(angle-angle0)));
+    return 1 - 1 / (1 + exp(-lambda * (angle - angle0)));
+}
+
+double compute_p_can_see_wide(double angle, double range)
+{
+    if ((angle != -1 && range == 0) || angle == -1)
+        return 0.5;
+
+    double max_angle = (range <= 5) ? -9.05 * range + 80 : -9.05 * 5 + 80;
+    max_angle = max_angle * M_PI / 180.0;
+    if (angle < max_angle)
+        return 1;
+    else
+        return 0;
 }
 
 /*

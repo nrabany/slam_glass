@@ -163,6 +163,7 @@ double compute_incindent_angle(map_t* map, double oa, int ci, int cj, double min
 double compute_std(double angle, double range);
 
 double compute_p_can_see(double angle, double range);
+double compute_p_can_see_wide(double angle, double range);
 
 /**************************************************************************
  * GUI/diagnostic functions
