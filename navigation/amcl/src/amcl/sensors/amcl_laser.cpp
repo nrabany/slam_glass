@@ -162,9 +162,15 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
 
   self = (AMCLLaser *)data->sensor;
 
+  vector<double> p_vector; 
+  // cout << set->sample_count*self->max_beams << "  " << endl;
+  p_vector.reserve(self->max_beams); // self->max_beams
+
+
   total_weight = 0.0;
 
-  cout << "p = " << pz_mean << " " << endl;
+  // Uncomment to print p_mean over the simulation
+  // cout << "p = " << pz_mean << " " << endl;
 
   // Compute the sample weights
   for (j = 0; j < set->sample_count; j++)
@@ -178,12 +184,15 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
     p = 1.0;
 
     step = (data->range_count - 1) / (self->max_beams - 1);
+
+    int index = 0;
     for (i = 0; i < data->range_count; i += step)
     {
       obs_range = data->ranges[i][0];
       obs_bearing = data->ranges[i][1];
 
-      bool NICOLAS_METHOD = true;
+      bool CONSIDERING_GLASS = true;
+
       // Compute the range according to the map
       // map_range = map_calc_range(self->map, pose.v[0], pose.v[1],
       //                            pose.v[2] + obs_bearing, data->range_max);
@@ -192,7 +201,7 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
       map_range = compute_range(self->map, pose.v[0], pose.v[1],
                                 cells_index.i_first, cells_index.j_first, data->range_max);
 
-      if (NICOLAS_METHOD == true)
+      if (CONSIDERING_GLASS == true)
       {
         map_range_behind = compute_range(self->map, pose.v[0], pose.v[1],
                                          cells_index.i_second, cells_index.j_second, data->range_max);
@@ -208,7 +217,7 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
 
       // Part 1a: good, but noisy, hit non glass
       z = obs_range - map_range;
-      if (NICOLAS_METHOD == false)
+      if (CONSIDERING_GLASS == false)
         pz += self->z_hit * exp(-(z * z) / (2 * self->sigma_hit * self->sigma_hit));
       else
       {
@@ -242,17 +251,36 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
 
       assert(pz <= 1.0);
       assert(pz >= 0.0);
-      pz_mean = (pz_mean * nb_pz + pz) / (nb_pz + 1);
-      nb_pz += 1;
+
+      // Uncomment to compute p_mean over all the simulation
+      // pz_mean = (pz_mean * nb_pz + pz) / (nb_pz + 1);
+      // nb_pz += 1;
+
+      p_vector[index] = (p_vector[index]*j + pz) / (j+1);
+      index += 1;
+
       //      p *= pz;
       // here we have an ad-hoc weighting scheme for combining beam probs
       // works well, though...
       p += pz * pz * pz;
     }
+    
 
     sample->weight *= p;
     total_weight += sample->weight;
   }
+
+  // Write pz to file
+  ofstream myfile;
+  myfile.open("/home/nicolas/catkin_ws/prob.txt", ios::out | ios::app);
+  myfile << time_pz;
+  for(int ii=0; ii<self->max_beams; ii++)
+  {
+    myfile << " " << p_vector[ii];
+  }
+  myfile << "\n";
+  time_pz += 1;
+  // myfile.close();
 
   return (total_weight);
 }

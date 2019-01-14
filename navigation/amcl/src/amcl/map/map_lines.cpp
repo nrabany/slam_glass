@@ -37,12 +37,24 @@ void map_hough_lines(map_t *map, uint16_t minPoints)
         bool new_group = true;
         float rho = lines[i][0], theta = lines[i][1];
 
+        // Make sure that rho is positive
+        if(rho<0)
+        {
+            rho = abs(rho);
+            theta += M_PI;
+        }
+        // Make sure that 0 < theta < 2*PI
+        if(theta<0)
+            theta += 2*M_PI;
+        while(theta>2*M_PI)
+            theta -= 2*M_PI;
+
         for (int j = 0; j < map->nb_lines; j++)
         {
             double rho_diff = abs(rho - map->lines[j].rho);
             double theta_diff = abs(theta - map->lines[j].theta);
             double rho_add = abs(rho + map->lines[j].rho);
-            // Here adjust parameters to group lines
+            // Here adjust parameters to group lines. !!rho_diff is in pixel!!
             if ((rho_diff < 80 && theta_diff < 3 * M_PI / 180) || (rho_add < 80 && theta_diff - M_PI < 3 * M_PI / 180))
             {
                 new_group = false;
@@ -50,6 +62,7 @@ void map_hough_lines(map_t *map, uint16_t minPoints)
             }
         }
 
+        // If line doesn't belong to a group of line, create a new group
         if (new_group == true)
         {
             map->nb_lines += 1;
@@ -79,6 +92,10 @@ void map_hough_lines(map_t *map, uint16_t minPoints)
     }
     cout << "nb_lines " << map->nb_lines << "  \n"
          << endl;
+    for(int i=0;i<map->nb_lines;i++)
+    {
+        cout << "line " << i << "-> theta: " << map->lines[i].theta << " , rho: " << map->lines[i].rho << " " << endl;
+    }
 
     // namedWindow("detected lines", WINDOW_NORMAL);
     // resizeWindow("detected lines", 1500, 1500);
@@ -88,19 +105,19 @@ void map_hough_lines(map_t *map, uint16_t minPoints)
     // Mat flipIm;
     // flip(cdst, flipIm, 0);
     // flip(src, src, 0);
-
     // imshow("detected lines", cdst);
     // imshow("flipped detected lines", flipIm);
+
 
     // waitKey();
 }
 
 /* Compute incindent angle. Everything is in map coordinates and scale because only angle of robot
- * is used to dtermine incindent angle. */
+ * is used to dtermine incindent angle. !!min_err is in pixel here!! */
 double compute_incindent_angle(map_t *map, double oa, int ci, int cj, double min_err)
 {
     int line_index = -1;
-
+    // cout << "pos: (" << ci << " , " << cj << ") " << endl;
     for (int i = 0; i < map->nb_lines; i++)
     {
         double theta = map->lines[i].theta;
@@ -108,7 +125,7 @@ double compute_incindent_angle(map_t *map, double oa, int ci, int cj, double min
 
         double err = min_err;
 
-        if (abs(theta) <= 0.05 || abs(theta - 2 * M_PI) <= 0.05)
+        if (abs(theta) <= 0.08 || abs(theta - 2 * M_PI) <= 0.05)
             err = abs(ci - rho);
         else if (abs(theta - M_PI) <= 0.05)
             err = abs(ci + rho);
@@ -156,7 +173,7 @@ double compute_std(double angle, double range)
 double compute_p_can_see(double angle, double range)
 {
     if (angle != -1 && range == 0)
-        return 0.5;
+        return 1;
 
     double max_angle = (range <= 3) ? -3.05 * range + 11.6 : 1;
     max_angle = max_angle * M_PI / 180.0;
@@ -172,15 +189,19 @@ double compute_p_can_see(double angle, double range)
 
 double compute_p_can_see_wide(double angle, double range)
 {
-    if ((angle != -1 && range == 0) || angle == -1)
-        return 0.5;
+    if (angle == -1)
+        return 1;
 
-    double max_angle = (range <= 5) ? -9.05 * range + 80 : -9.05 * 5 + 80;
+    // double max_angle = (range <= 5) ? -10 * range + 55 : -10 * 5 + 55;
+    double max_angle = 30;
     max_angle = max_angle * M_PI / 180.0;
+
     if (angle < max_angle)
         return 1;
-    else
-        return 0;
+    // else if(angle < 3/2*max_angle)
+    //     return 3 - 2 / max_angle * angle;
+
+    return 0;
 }
 
 /*

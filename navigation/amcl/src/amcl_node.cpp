@@ -74,6 +74,10 @@
 #include <rosbag/view.h>
 #include <boost/foreach.hpp>
 
+#include <iostream>
+#include <fstream>
+using namespace std;
+
 #define NEW_UNIFORM_SAMPLING 1
 
 using namespace amcl;
@@ -979,6 +983,13 @@ AmclNode::convertMap( const nav_msgs::OccupancyGrid& map_msg )
 
   pz_mean = 0.0;
   nb_pz = 0;
+  time_pz = 0;
+
+  // To create file or clear it if it already exists
+  ofstream myfile;
+  myfile.open ("/home/nicolas/catkin_ws/prob.txt");
+  myfile.close();
+
   return map;
 }
 

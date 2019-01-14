@@ -286,6 +286,8 @@ cells_index_t map_find_cells(map_t *map, double ox, double oy, double oa, double
     if(ncells_found == 2)
       return nearest_cells;
   }
+  // nearest_cells.i_second = nearest_cells.i_first;
+  // nearest_cells.j_second = nearest_cells.j_first;
   return nearest_cells;
 }
 

@@ -38,6 +38,7 @@ namespace amcl
 // Values
 long double pz_mean;
 uint64_t nb_pz;
+uint64_t time_pz;
 
 typedef enum
 {

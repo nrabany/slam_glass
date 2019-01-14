@@ -4,10 +4,10 @@
 
   <arg name="bag_path"  default="$(find tests)/bags/"/>
   <arg name="map_path"  default="$(find tests)/maps/"/>
-  <arg name="bag_name"  default="B14F10"/>   
-  <arg name="map_name"  default="Map0"/>  
-  <arg name="rosbag_rate"  default="0.5" />
+  <arg name="bag_name"  default="output2"/>   
+  <arg name="map_name"  default="MapWindow2"/>  
   <arg name="config_path"  default="$(find tests)/config/amcl.rviz"/>
+  <arg name="rosbag_rate"  default="0.5" />
 
   <!-- amcl parameters -->
   <arg name="update_min_d"        default="0.01" />
