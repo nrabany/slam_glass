@@ -1,122 +1,36 @@
-/*
- *  Player - One Hell of a Robot Server
- *  Copyright (C) 2000  Brian Gerkey   &  Kasper Stoy
- *                      gerkey@usc.edu    kaspers@robotics.usc.edu
- *
- *  This library is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU Lesser General Public
- *  License as published by the Free Software Foundation; either
- *  version 2.1 of the License, or (at your option) any later version.
- *
- *  This library is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *  Lesser General Public License for more details.
- *
- *  You should have received a copy of the GNU Lesser General Public
- *  License along with this library; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- */
-/**************************************************************************
- * Desc: Range routines
- * Author: Andrew Howard
- * Date: 18 Jan 2003
- * CVS: $Id: map_range.c 1347 2003-05-05 06:24:33Z inspectorg $
- * Modified by Nicolas Rabany 2018.12.05
-**************************************************************************/
-
-#include <assert.h>
+#include <queue>
 #include <math.h>
-#include <string.h>
 #include <stdlib.h>
-#include "amcl/map/map.h"
+#include <string.h>
+#include "../../../include/amcl/map/map.h"
+#include <opencv2/opencv.hpp>
 
-// Extract a single range reading from the map.  Unknown cells and/or
-// out-of-bound cells are treated as occupied, which makes it easy to
-// use Stage bitmap files.
-double map_calc_range(map_t *map, double ox, double oy, double oa, double max_range)
+#include <iostream>
+
+// using namespace cv;
+using namespace std;
+using namespace cv;
+
+// Create a new map
+map_t *map_alloc(void)
 {
-  // Bresenham raytracing
-  int x0,x1,y0,y1;
-  int x,y;
-  int xstep, ystep;
-  char steep;
-  int tmp;
-  int deltax, deltay, error, deltaerr;
+    map_t *map;
 
-  x0 = MAP_GXWX(map,ox);
-  y0 = MAP_GYWY(map,oy);
-  
-  x1 = MAP_GXWX(map,ox + max_range * cos(oa));
-  y1 = MAP_GYWY(map,oy + max_range * sin(oa));
+    map = (map_t *)malloc(sizeof(map_t));
 
-  if(abs(y1-y0) > abs(x1-x0))
-    steep = 1;
-  else
-    steep = 0;
+    // Assume we start at (0, 0)
+    map->origin_x = 0;
+    map->origin_y = 0;
 
-  if(steep)
-  {
-    tmp = x0;
-    x0 = y0;
-    y0 = tmp;
+    // Make the size odd
+    map->size_x = 0;
+    map->size_y = 0;
+    map->scale = 0;
 
-    tmp = x1;
-    x1 = y1;
-    y1 = tmp;
-  }
+    // Allocate storage for main map
+    map->cells = (map_cell_t *)NULL;
 
-  deltax = abs(x1-x0);
-  deltay = abs(y1-y0);
-  error = 0;
-  deltaerr = deltay;
-
-  x = x0;
-  y = y0;
-
-  if(x0 < x1)
-    xstep = 1;
-  else
-    xstep = -1;
-  if(y0 < y1)
-    ystep = 1;
-  else
-    ystep = -1;
-
-  if(steep)
-  {
-    if(!MAP_VALID(map,y,x) || map->cells[MAP_INDEX(map,y,x)].occ_state > -1)
-      return sqrt((x-x0)*(x-x0) + (y-y0)*(y-y0)) * map->scale;
-  }
-  else
-  {
-    if(!MAP_VALID(map,x,y) || map->cells[MAP_INDEX(map,x,y)].occ_state > -1)
-      return sqrt((x-x0)*(x-x0) + (y-y0)*(y-y0)) * map->scale;
-  }
-
-  while(x != (x1 + xstep * 1))
-  {
-    x += xstep;
-    error += deltaerr;
-    if(2*error >= deltax)
-    {
-      y += ystep;
-      error -= deltax;
-    }
-
-    if(steep)
-    {
-      if(!MAP_VALID(map,y,x) || map->cells[MAP_INDEX(map,y,x)].occ_state > -1)
-        return sqrt((x-x0)*(x-x0) + (y-y0)*(y-y0)) * map->scale;
-    }
-    else
-    {
-      if(!MAP_VALID(map,x,y) || map->cells[MAP_INDEX(map,x,y)].occ_state > -1)
-        return sqrt((x-x0)*(x-x0) + (y-y0)*(y-y0)) * map->scale;
-    }
-  }
-  return max_range;
+    return map;
 }
 
 // Find two nearest occupied cells from map.
@@ -297,11 +211,65 @@ double compute_range(map_t *map, double ox, double oy, int ci, int cj, double ma
   int x0 = MAP_GXWX(map,ox);
   int y0 = MAP_GYWY(map,oy);
   double range = sqrt((ci-x0)*(ci-x0) + (cj-y0)*(cj-y0)) * map->scale;
-  return range > max_range ? max_range : range; 
+  return range > max_range? max_range : range; 
 }
 
-// Return the probability of being a glass for a cell
-double get_glass_prob(map_t *map, int ci, int cj)
+int main()
 {
-  return (map->cells[MAP_INDEX(map,ci,cj)].p_glass == -1)? 0.0 : map->cells[MAP_INDEX(map,ci,cj)].p_glass;
+
+    map_t *map = map_alloc();
+    map->scale = 1;
+    map->size_x = 100;
+    map->size_y = map->size_x;
+    map->cells = (map_cell_t*)malloc(sizeof(map_cell_t)*map->size_x*map->size_y);
+    map->gridData = (uint8_t *)malloc(sizeof(uint8_t) * 10 * map->size_x * map->size_y);
+    cout << sizeof(map->gridData) << endl;
+    map->nb_lines = 0;
+    map->lines = (map_line_t *)malloc(sizeof(map_line_t) * 200);
+
+    // uint8_t example[25] = {255,255,0,0,1, 0,0,0,1,0, 0,0,1,0,0, 0,1,0,0,0, 1,0,0,0,0};
+
+    for (int i = 0; i < map->size_x; i++)
+    {
+        for (int j = 0; j < map->size_y; j++)
+        {
+            if (i == 5 || i == map->size_x - 5 || j == 5 || j == map->size_y - 5 || i == j
+                || i == 6 || j == 6)
+            {
+                map->cells[MAP_INDEX(map, i, j)].occ_state = 1;
+                map->cells[MAP_INDEX(map, i, j)].p_glass = 0.5;
+                map->gridData[MAP_INDEX(map, i, j)] = 0;
+            }
+            else
+            {
+                map->cells[MAP_INDEX(map, i, j)].occ_state = 0;
+                map->cells[MAP_INDEX(map, i, j)].p_glass = -1;
+                map->gridData[MAP_INDEX(map, i, j)] = 255;
+            }
+        }
+    }
+
+    int robot_i = 2;
+    int robot_j = static_cast<int>(map->size_y/2);
+    double robot_a = -0.785398;
+    cout << "robot pose: (" << robot_i << "," << robot_j << ")" << endl;
+    map->gridData[MAP_INDEX(map, robot_i, robot_j)] = 0;
+
+    Mat src(Size(map->size_x,map->size_y),CV_8UC1,map->gridData);
+
+    cells_index_t cells_index;
+    cells_index = map_find_cells(map, MAP_WXGX(map, robot_i), MAP_WXGX(map, robot_j), robot_a, 100);
+
+    cout << "first: (" << cells_index.i_first << "," << cells_index.j_first << ")\nsecond: (" << cells_index.i_second << "," << cells_index.j_second << ")" << endl; 
+    map->gridData[MAP_INDEX(map, cells_index.i_first, cells_index.j_first)] = 200;
+    map->gridData[MAP_INDEX(map, cells_index.i_second, cells_index.j_second)] = 200;
+
+    // cout << src << endl;
+    namedWindow("source",WINDOW_NORMAL);
+    resizeWindow("source", 1500,1500);
+    imshow("source", src);
+    waitKey();
+
+    return 1;
+
 }
