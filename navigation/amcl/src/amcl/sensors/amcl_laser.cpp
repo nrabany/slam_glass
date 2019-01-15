@@ -164,14 +164,11 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
 
   vector<double> p_vector; 
 
-  p_vector.reserve(self->max_beams); // self->max_beams
+  p_vector.reserve(self->max_beams);
 
 
   total_weight = 0.0;
 
-  // Uncomment to print p_mean over the simulation
-  // cout << "p = " << pz_mean << " " << endl;
-  double first_range, second_range, laser_range, first_p_glass = -1; 
   // Compute the sample weights
   for (j = 0; j < set->sample_count; j++)
   {
@@ -252,10 +249,6 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
       assert(pz <= 1.0);
       assert(pz >= 0.0);
 
-      // Uncomment to compute p_mean over all the simulation
-      // pz_mean = (pz_mean * nb_pz + pz) / (nb_pz + 1);
-      // nb_pz += 1;
-
       p_vector[index] = (p_vector[index]*j + pz) / (j+1);
       index += 1;
 
@@ -263,25 +256,11 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
       // here we have an ad-hoc weighting scheme for combining beam probs
       // works well, though...
       p += pz * pz * pz;
-
-      if(index==0)
-      {
-      //   first_range = (first_range*j + map_range) / (j+1);
-      //   second_range = (second_range*j + map_range_behind) / (j+1);
-      //   laser_range = (laser_range*j + obs_range) / (j+1);
-        first_range = map_range;
-        second_range = map_range_behind;
-        laser_range = obs_range; 
-        first_p_glass = p_glass; 
-      }
     }
 
     sample->weight *= p;
     total_weight += sample->weight;
   }
-
-  cout << "first: " << first_range << ", second: " << second_range << ", laser: " << laser_range << endl;
-  cout << ", p_glass: " << first_p_glass << " " << endl;
 
   // Write pz to file
   ofstream myfile;
@@ -293,7 +272,6 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
   }
   myfile << "\n";
   time_pz += 1;
-  // myfile.close();
 
   return (total_weight);
 }
