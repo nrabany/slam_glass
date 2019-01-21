@@ -16,7 +16,7 @@ void map_hough_lines(map_t *map, uint16_t minPoints)
     Mat src(map->size_x, map->size_y, CV_8UC1, map->gridData);
 
     // Here get a binary image by thresholding
-    uchar intensityThresh = 99;
+    uchar intensityThresh = 50;
     Mat srcThresh; // = src;
     threshold(src, srcThresh, intensityThresh, 255, THRESH_BINARY_INV);
 
@@ -92,24 +92,24 @@ void map_hough_lines(map_t *map, uint16_t minPoints)
     }
     cout << "nb_lines " << map->nb_lines << "  \n"
          << endl;
+    
+    // Print lines
     for(int i=0;i<map->nb_lines;i++)
     {
         cout << "line " << i << "-> theta: " << map->lines[i].theta << " , rho: " << map->lines[i].rho << " " << endl;
     }
 
-    // namedWindow("detected lines", WINDOW_NORMAL);
-    // resizeWindow("detected lines", 1500, 1500);
+    /* ------ Visualize lines on image -------------*/
     // namedWindow("flipped detected lines", WINDOW_NORMAL);
     // resizeWindow("flipped detected lines", 1500, 1500);
     // /*flip before plot because map coordinates and image coordinates have y axis inverted*/
     // Mat flipIm;
     // flip(cdst, flipIm, 0);
     // flip(src, src, 0);
-    // imshow("detected lines", cdst);
     // imshow("flipped detected lines", flipIm);
 
-
     // waitKey();
+    /* ----------------------------------------------*/
 }
 
 /* Compute incindent angle. Everything is in map coordinates and scale because only angle of robot
@@ -125,10 +125,12 @@ double compute_incindent_angle(map_t *map, double oa, int ci, int cj, double min
 
         double err = min_err;
 
-        if (abs(theta) <= 0.08 || abs(theta - 2 * M_PI) <= 0.05)
+        if (abs(theta) <= 0.005 || abs(theta - 2 * M_PI) <= 0.005)
             err = abs(ci - rho);
-        else if (abs(theta - M_PI) <= 0.05)
+        else if (abs(theta - M_PI) <= 0.005)
             err = abs(ci + rho);
+        else if (abs(theta) <= 0.7 || abs(theta - 2 * M_PI) <= 0.7)
+            err = abs((cj*sin(theta) + ci*cos(theta)) - rho);
         else
             err = abs(cj - (-ci * cos(theta) + rho) / sin(theta));
 
@@ -173,9 +175,9 @@ double compute_std(double angle, double range)
 double compute_p_can_see(double angle, double range)
 {
     if (angle != -1 && range == 0)
-        return 1;
+        return 0.5;
 
-    double max_angle = (range <= 3) ? -3.05 * range + 11.6 : 1;
+    double max_angle = (range <= 3) ? -4 * range + 15 : -4 * 3 + 15;
     max_angle = max_angle * M_PI / 180.0;
     if (angle < max_angle)
         return 1;
@@ -187,20 +189,47 @@ double compute_p_can_see(double angle, double range)
     return 1 - 1 / (1 + exp(-lambda * (angle - angle0)));
 }
 
-double compute_p_can_see_wide(double angle, double range)
+double compute_p_can_see_thresh(double angle, double range)
 {
     if (angle == -1)
-        return 1;
+        return 0.5;
 
     // double max_angle = (range <= 5) ? -10 * range + 55 : -10 * 5 + 55;
-    double max_angle = 30;
+    double max_angle = 80;
     max_angle = max_angle * M_PI / 180.0;
 
+    double beta = 4;
     if (angle < max_angle)
         return 1;
     // else if(angle < 3/2*max_angle)
     //     return 3 - 2 / max_angle * angle;
+    // else if(angle < beta*max_angle)
+    // {   
+    //     return - 1 / (max_angle*(beta-1)) * angle + beta / (beta-1);
+    // }
 
+    return 0;
+}
+
+double compute_p_can_see_wide(double angle, double range)
+{
+    if (angle == -1)
+        return 0.5;
+
+    // double max_angle = (range <= 5) ? -6.5 * range + 35 : -6.6 * 5 + 35;
+    double max_angle = (range <= 3) ? -4 * range + 15 : -4 * 3 + 15;
+    max_angle = max_angle * M_PI / 180.0;
+
+    double beta = 4;
+    if (angle < max_angle)
+        return 1;
+    // else if(angle < 3/2*max_angle)
+    //     return 3 - 2 / max_angle * angle;
+    else if(angle < beta*max_angle)
+    {   
+        // cout << "max_angle: " << max_angle << ", angle: " << angle << ", p: " << angle / (max_angle*(4-1)) - 1 / (4-1) << endl;
+        return - 1 / (max_angle*(beta-1)) * angle + beta / (beta-1);
+    }
     return 0;
 }
 

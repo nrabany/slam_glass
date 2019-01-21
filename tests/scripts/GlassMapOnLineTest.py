@@ -495,29 +495,32 @@ class GlassMapBuilder():
         #                                                                             --> beeing glass tends to 0.40
         self.finalGlassMap[self.gridMap == -1] = 205.0/255.0
         self.finalGlassMap[self.gridMap == 0] = 254.0/255.0
-        # self.finalGlassMap[self.gridMap > 0] = 100.0*self.finalGlassMap[self.gridMap > 0]/255.0
-        self.finalGlassMap[self.gridMap > 0] = 0.0
+        self.finalGlassMap[self.gridMap > 0] = 100.0*self.finalGlassMap[self.gridMap > 0]/255.0
         
         # Remove after ------------------------------------
+        # self.finalGlassMap[self.gridMap > 0] = 0.0
+        
         # Assign manually value of glass for a specific case
-        # self.finalGlassMap[2030, 2060:2065+1] = 100.0/255.0
-        # self.finalGlassMap[2029, 2064:2075+1] = 100.0/255.0
-        # self.finalGlassMap[2028, 2080:2090+1] = 100.0/255.0
-        # self.finalGlassMap[2027, 2089:2095+1] = 100.0/255.0
-        # self.finalGlassMap[2027, 2099:2109+1] = 100.0/255.0
-        # self.finalGlassMap[2026, 2107:2114+1] = 100.0/255.0
-        # self.finalGlassMap[2026, 2119:2126+1] = 100.0/255.0
-        # self.finalGlassMap[2025, 2125:2134+1] = 100.0/255.0
-        # self.finalGlassMap[2025, 2139:2144+1] = 100.0/255.0
-        # self.finalGlassMap[2024, 2143:2154+1] = 100.0/255.0
-        # self.finalGlassMap[2023, 2159:2166+1] = 100.0/255.0
-        # self.finalGlassMap[2022, 2164:2173+1] = 100.0/255.0
-        self.finalGlassMap[1795:1811+1,2061:2062+1] = 100.0/255.0
-        self.finalGlassMap[1815:1830+1,2061:2062+1] = 100.0/255.0
-        self.finalGlassMap[1834:1850+1,2061:2062+1] = 100.0/255.0
-        self.finalGlassMap[1854:1869+1,2061:2062+1] = 100.0/255.0
-        self.finalGlassMap[1874:1889+1,2061:2062+1] = 100.0/255.0
-        self.finalGlassMap[1894:1908+1,2061:2062+1] = 100.0/255.0
+        # self.finalGlassMap[1793:1807+1,2059] = 100.0/255.0
+        # self.finalGlassMap[1812:1826+1,2060] = 100.0/255.0
+        # self.finalGlassMap[1831:1846+1,2060] = 100.0/255.0
+        # self.finalGlassMap[1851:1866+1,2061] = 100.0/255.0
+        # self.finalGlassMap[1870:1886+1,2061] = 100.0/255.0
+        # self.finalGlassMap[1890:1905+1,2062] = 100.0/255.0
+
+        # self.finalGlassMap[1793:1807+1,2058] = 254.0/255.0
+        # self.finalGlassMap[1812:1826+1,2059] = 254.0/255.0
+        # self.finalGlassMap[1831:1846+1,2059] = 254.0/255.0
+        # self.finalGlassMap[1851:1866+1,2060] = 254.0/255.0
+        # self.finalGlassMap[1870:1886+1,2060] = 254.0/255.0
+        # self.finalGlassMap[1890:1905+1,2061] = 254.0/255.0
+
+        # self.finalGlassMap[1793:1807+1,2060] = 254.0/255.0
+        # self.finalGlassMap[1812:1826+1,2061] = 254.0/255.0
+        # self.finalGlassMap[1831:1846+1,2061] = 254.0/255.0
+        # self.finalGlassMap[1851:1866+1,2062] = 254.0/255.0
+        # self.finalGlassMap[1870:1886+1,2062] = 254.0/255.0
+        # self.finalGlassMap[1890:1905+1,2063] = 254.0/255.0
 
         # -------------------------------------------------
 

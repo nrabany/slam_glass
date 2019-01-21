@@ -164,6 +164,7 @@ double compute_std(double angle, double range);
 
 double compute_p_can_see(double angle, double range);
 double compute_p_can_see_wide(double angle, double range);
+double compute_p_can_see_thresh(double inc_angle, double map_range);
 
 /**************************************************************************
  * GUI/diagnostic functions

@@ -158,7 +158,7 @@ cells_index_t map_find_cells(map_t *map, double ox, double oy, double oa, double
         }
         else 
         {
-          if(same_obstacle == 0)
+          if(same_obstacle == 0 || map->cells[MAP_INDEX(map,y,x)].p_glass<0.1)
           {
             nearest_cells.i_second = y;
             nearest_cells.j_second = x;
@@ -188,7 +188,7 @@ cells_index_t map_find_cells(map_t *map, double ox, double oy, double oa, double
         }
         else 
         {
-          if(same_obstacle == 0)
+          if(same_obstacle == 0 || map->cells[MAP_INDEX(map,x,y)].p_glass<0.1)
           {
             nearest_cells.i_second = x;
             nearest_cells.j_second = y;

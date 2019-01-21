@@ -169,6 +169,7 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
 
   total_weight = 0.0;
 
+  double first_range, second_range, laser_range, prob, i_angle = -1;
   // Compute the sample weights
   for (j = 0; j < set->sample_count; j++)
   {
@@ -208,7 +209,7 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
 
         std_glass = compute_std(inc_angle, map_range);
 
-        p_can_see = compute_p_can_see_wide(inc_angle, map_range);
+        p_can_see = compute_p_can_see_thresh(inc_angle, map_range);
       }
       pz = 0.0;
 
@@ -224,7 +225,7 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
 
         // Part 1c: good, but noisy, hit behind
         z_behind = obs_range - map_range_behind;
-        pz += self->z_hit * exp(-(z_behind * z_behind) / (2 * self->sigma_hit * self->sigma_hit)) * p_glass * (1 - p_can_see);
+        pz += self->z_hit * exp(-(z_behind * z_behind) / (2 * 4 * self->sigma_hit * self->sigma_hit)) * p_glass * (1 - p_can_see);
       }
 
       // Part 2: short reading from unexpected obstacle (e.g., a person)
@@ -256,12 +257,23 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
       // here we have an ad-hoc weighting scheme for combining beam probs
       // works well, though...
       p += pz * pz * pz;
+
+      if(index==1+1)
+      {
+        first_range = map_range;
+        second_range = map_range_behind;
+        laser_range = obs_range;
+        prob = p_glass;
+        i_angle = inc_angle;
+        // cout << obs_bearing << endl;
+      }
     }
 
     sample->weight *= p;
     total_weight += sample->weight;
   }
-
+  // cout << "1st: " << first_range << ", 2nd: " << second_range << ", laser: " << laser_range << " " << endl;
+  // cout << "p: " << prob << ", angle: " << i_angle << " " << endl;
   // Write pz to file
   ofstream myfile;
   myfile.open("/home/nicolas/catkin_ws/prob.txt", ios::out | ios::app);
