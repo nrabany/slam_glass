@@ -15,8 +15,8 @@ void map_hough_lines(map_t *map, uint16_t minPoints)
 {
     Mat src(map->size_x, map->size_y, CV_8UC1, map->gridData);
 
-    // Here get a binary image by thresholding
-    uchar intensityThresh = 50;
+    // Here get a binary image by thresholding (Filter to have only obstacles with p(glass)>0.1)
+    uchar intensityThresh = 90;
     Mat srcThresh; // = src;
     threshold(src, srcThresh, intensityThresh, 255, THRESH_BINARY_INV);
 
@@ -195,7 +195,7 @@ double compute_p_can_see_thresh(double angle, double range)
         return 0.5;
 
     // double max_angle = (range <= 5) ? -10 * range + 55 : -10 * 5 + 55;
-    double max_angle = 80;
+    double max_angle = 25;
     max_angle = max_angle * M_PI / 180.0;
 
     double beta = 4;

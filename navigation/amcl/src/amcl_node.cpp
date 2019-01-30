@@ -970,7 +970,7 @@ AmclNode::convertMap( const nav_msgs::OccupancyGrid& map_msg )
     {
       map->cells[i].occ_state = +1;
       map->cells[i].p_glass = (map_msg.data[i]-100)/27.0; // See in map_server/src/image_loader.cpp how it has been stored
-      map->gridData[i] = 0;
+      map->gridData[i] = 100.0 - (map_msg.data[i]-100)/27.0*100.0;
     }
     else
     {
@@ -989,6 +989,11 @@ AmclNode::convertMap( const nav_msgs::OccupancyGrid& map_msg )
   ofstream myfile;
   myfile.open ("/home/nicolas/catkin_ws/prob.txt");
   myfile.close();
+
+  // To create file or clear it if it already exists
+  ofstream myfile2;
+  myfile2.open ("/home/nicolas/catkin_ws/pos.txt");
+  myfile2.close();
 
   return map;
 }
@@ -1421,6 +1426,13 @@ AmclNode::laserReceived(const sensor_msgs::LaserScanConstPtr& laser_scan)
                hyps[max_weight_hyp].pf_pose_mean.v[0],
                hyps[max_weight_hyp].pf_pose_mean.v[1],
                hyps[max_weight_hyp].pf_pose_mean.v[2]);
+
+      uint64_t nseconds = ros::Time::now().toNSec();
+      ofstream myfile2;
+      myfile2.open("/home/nicolas/catkin_ws/pos.txt", ios::out | ios::app);
+      myfile2 << nseconds << " " << hyps[max_weight_hyp].pf_pose_mean.v[0] << 
+                            " " << hyps[max_weight_hyp].pf_pose_mean.v[1] <<
+                            " " << hyps[max_weight_hyp].pf_pose_mean.v[2] << "\n";
 
       // subtracting base to odom from map to base and send map to odom instead
       geometry_msgs::PoseStamped odom_to_map;

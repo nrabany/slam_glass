@@ -225,7 +225,7 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
 
         // Part 1c: good, but noisy, hit behind
         z_behind = obs_range - map_range_behind;
-        pz += self->z_hit * exp(-(z_behind * z_behind) / (2 * 4 * self->sigma_hit * self->sigma_hit)) * p_glass * (1 - p_can_see);
+        pz += self->z_hit * exp(-(z_behind * z_behind) / (2 * self->sigma_hit * self->sigma_hit)) * p_glass * (1 - p_can_see);
       }
 
       // Part 2: short reading from unexpected obstacle (e.g., a person)
@@ -258,7 +258,7 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
       // works well, though...
       p += pz * pz * pz;
 
-      if(index==1+1)
+      if(index==13)
       {
         first_range = map_range;
         second_range = map_range_behind;

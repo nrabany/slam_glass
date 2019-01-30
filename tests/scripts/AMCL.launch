@@ -4,8 +4,8 @@
 
   <arg name="bag_path"  default="$(find tests)/bags/"/>
   <arg name="map_path"  default="$(find tests)/maps/"/>
-  <arg name="bag_name"  default="output3"/>   
-  <arg name="map_name"  default="MapWindow2bis"/>  
+  <arg name="bag_name"  default="groundTruth2"/>   
+  <arg name="map_name"  default="MapGroundTruth2"/>  
   <arg name="config_path"  default="$(find tests)/config/amcl.rviz"/>
   <arg name="rosbag_rate"  default="0.5" />
 
