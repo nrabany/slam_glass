@@ -42,7 +42,6 @@ struct _rtk_fig_t;
 // Limits
 #define MAP_WIFI_MAX_LEVELS 8
 
-
 // Description for a single map cell.
 typedef struct
 {
@@ -164,7 +163,7 @@ double compute_std(double angle, double range);
 
 double compute_p_can_see(double angle, double range);
 double compute_p_can_see_wide(double angle, double range);
-double compute_p_can_see_thresh(double inc_angle, double map_range);
+double compute_p_can_see_thresh(double inc_angle, double map_range, double angle_max);
 
 /**************************************************************************
  * GUI/diagnostic functions

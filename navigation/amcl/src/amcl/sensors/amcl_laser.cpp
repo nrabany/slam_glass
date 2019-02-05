@@ -208,8 +208,8 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
         inc_angle = compute_incindent_angle(self->map, pose.v[2] + obs_bearing, cells_index.i_first, cells_index.j_first, 30);
 
         std_glass = compute_std(inc_angle, map_range);
-
-        p_can_see = compute_p_can_see_thresh(inc_angle, map_range);
+        
+        p_can_see = compute_p_can_see_thresh(inc_angle, map_range, angle_thresh);
       }
       pz = 0.0;
 
@@ -226,6 +226,27 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
         // Part 1c: good, but noisy, hit behind
         z_behind = obs_range - map_range_behind;
         pz += self->z_hit * exp(-(z_behind * z_behind) / (2 * self->sigma_hit * self->sigma_hit)) * p_glass * (1 - p_can_see);
+        
+
+        double Kp = 0.001;
+        // Here if angle > alpha_thresh and detect glass
+        if(p_glass > 0.5 && abs(z) < self->sigma_hit && p_can_see < 0.2)
+        {
+          double err = inc_angle/M_PI*180.0 - angle_thresh;
+          // Bound the error
+          if(err > 20)
+            err = 20;
+          angle_thresh += Kp*err;
+        }
+        // Here if angle < alpha_thresh and don't detect glass
+        else if(p_glass > 0.5 && abs(z) > self->sigma_hit && p_can_see > 0.8)
+        {
+          double err = inc_angle*M_PI/180.0 - angle_thresh;
+          // Bound the error
+          if(err < -20)
+            err = -20;
+          angle_thresh += Kp*err;
+        }
       }
 
       // Part 2: short reading from unexpected obstacle (e.g., a person)
@@ -283,7 +304,14 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
     myfile << " " << p_vector[ii];
   }
   myfile << "\n";
+
+  ofstream myfile2;
+  myfile2.open("/home/nicolas/catkin_ws/threshVal.txt", ios::out | ios::app);
+  myfile2 << time_pz << " " << angle_thresh << "\n";
+  
   time_pz += 1;
+
+  cout << angle_thresh << endl;
 
   return (total_weight);
 }

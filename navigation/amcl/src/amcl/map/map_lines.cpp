@@ -189,17 +189,17 @@ double compute_p_can_see(double angle, double range)
     return 1 - 1 / (1 + exp(-lambda * (angle - angle0)));
 }
 
-double compute_p_can_see_thresh(double angle, double range)
+double compute_p_can_see_thresh(double angle, double range, double angle_max)
 {
     if (angle == -1)
         return 0.5;
 
     // double max_angle = (range <= 5) ? -10 * range + 55 : -10 * 5 + 55;
-    double max_angle = 25;
-    max_angle = max_angle * M_PI / 180.0;
+    // double max_angle = 90;
+    angle_max = angle_max * M_PI / 180.0;
 
-    double beta = 4;
-    if (angle < max_angle)
+    // double beta = 4;
+    if (angle < angle_max)
         return 1;
     // else if(angle < 3/2*max_angle)
     //     return 3 - 2 / max_angle * angle;
@@ -232,105 +232,3 @@ double compute_p_can_see_wide(double angle, double range)
     }
     return 0;
 }
-
-/*
-int main()
-{
- const char* filename = "../../../../../tests/maps/Map0.pgm";
-//  const char* filename = "../../../../../tests/maps/ex1.pgm";
-
- Mat src = imread(filename, 0); 
- if(src.empty())
- {
-     help();
-     cout << "can not open " << filename << endl;
-     return -1;
- }
- 
- // Here get a binary image by thresholding
- uchar intensityThresh = 200;
- Mat srcThresh;
- threshold(src, srcThresh, intensityThresh, 255, THRESH_BINARY_INV);
-
- // Lines will be plot on cdst
- Mat cdst;
- cvtColor(srcThresh, cdst, CV_GRAY2BGR);
- imwrite( "../../../../../tests/maps/src.jpg", srcThresh);
- 
- #if 1
-  vector<Vec2f> lines;
-  HoughLines(srcThresh, lines, 1, CV_PI/180, 40, 0, 0 );
-  
-  vector<Vec2f> groups; // <rho, theta>
-  for( size_t i = 0; i < lines.size(); i++ )
-  {
-     bool new_group = true;
-
-     float rho = lines[i][0], theta = lines[i][1];
-     if(groups.size() != 0)
-     {
-        for(int j = 0; j < groups.size(); j++)
-        {
-            double rho_diff = abs(rho-groups[j][0]);
-            double theta_diff = abs(theta-groups[j][1]);
-            // Here adjust parameters to group lines
-            if(rho_diff < 80 && theta_diff < 3*CV_PI/180)
-            {
-                new_group = false;
-            }
-
-        }
-     }
-     if(new_group == true)
-     {
-        Vec2f group;
-        group[0] = rho;
-        group[1] = theta;
-        groups.push_back(group);
-
-        Point pt1, pt2;
-        double a = cos(theta), b = sin(theta);
-        double x0 = a*rho, y0 = b*rho;
-        pt1.x = cvRound(x0 + 4000*(-b));
-        pt1.y = cvRound(y0 + 4000*(a));
-        pt2.x = cvRound(x0 - 4000*(-b));
-        pt2.y = cvRound(y0 - 4000*(a));
-        line( cdst, pt1, pt2, Scalar(0,0,255), 0.5, CV_AA);
-     }
-  }
-  cout << groups.size() << endl;
-//   for( size_t i = 0; i < lines.size(); i++ )
-//   {
-//      float rho = lines[i][0], theta = lines[i][1];
-//      Point pt1, pt2;
-//      double a = cos(theta), b = sin(theta);
-//      double x0 = a*rho, y0 = b*rho;
-//      pt1.x = cvRound(x0 + 4000*(-b));
-//      pt1.y = cvRound(y0 + 4000*(a));
-//      pt2.x = cvRound(x0 - 4000*(-b));
-//      pt2.y = cvRound(y0 - 4000*(a));
-//      line( cdst, pt1, pt2, Scalar(0,0,255), 0.5, CV_AA);
-//   }
- #else
-  vector<Vec4i> lines;
-  HoughLinesP(srcThresh, lines, 1, CV_PI/180, 20, 20, 12);
-  for( size_t i = 0; i < lines.size(); i++ )
-  {
-    Vec4i l = lines[i];
-    line( cdst, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(0,0,255), 1, CV_AA);
-  }
- #endif
- 
- imwrite( "../../../../../tests/maps/lines.jpg", cdst);
-
- namedWindow("source",WINDOW_NORMAL);
- resizeWindow("source", 1500,1500);
- imshow("source", srcThresh);
- namedWindow("detected lines",WINDOW_NORMAL);
- resizeWindow("detected lines", 1500,1500);
- imshow("detected lines", cdst);
-
- waitKey();
-
- return 0;
-}*/

@@ -984,6 +984,7 @@ AmclNode::convertMap( const nav_msgs::OccupancyGrid& map_msg )
   pz_mean = 0.0;
   nb_pz = 0;
   time_pz = 0;
+  angle_thresh = 90;
 
   // To create file or clear it if it already exists
   ofstream myfile;
@@ -993,6 +994,11 @@ AmclNode::convertMap( const nav_msgs::OccupancyGrid& map_msg )
   // To create file or clear it if it already exists
   ofstream myfile2;
   myfile2.open ("/home/nicolas/catkin_ws/pos.txt");
+  myfile2.close();
+
+  // To create file or clear it if it already exists
+  ofstream myfile3;
+  myfile2.open ("/home/nicolas/catkin_ws/threshVal.txt");
   myfile2.close();
 
   return map;
