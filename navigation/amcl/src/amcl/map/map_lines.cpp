@@ -30,6 +30,10 @@ void map_hough_lines(map_t *map, uint16_t minPoints)
     // Lines will be plot on cdst -----------------------------------------
     Mat cdst;
     cvtColor(srcThresh, cdst, CV_GRAY2BGR);
+    Mat showMap;
+    cvtColor(src, showMap, CV_GRAY2BGR);
+    showMap =  Scalar::all(255) - showMap;
+
     //---------------------------------------------------------------------
 
     for (size_t i = 0; i < lines.size(); i++)
@@ -87,6 +91,7 @@ void map_hough_lines(map_t *map, uint16_t minPoints)
             pt2.x = cvRound(x0 - map->size_y * (-b));
             pt2.y = cvRound(y0 - map->size_x * (a));
             line(cdst, pt1, pt2, Scalar(0, 0, 255), 0.5, CV_AA);
+            line(showMap, pt1, pt2, Scalar(0, 0, 255), 0.5, CV_AA);
             /*-----END DRAW LINES-----------------------------------------------------------------*/
         }
     }
@@ -105,6 +110,7 @@ void map_hough_lines(map_t *map, uint16_t minPoints)
     // /*flip before plot because map coordinates and image coordinates have y axis inverted*/
     // Mat flipIm;
     // flip(cdst, flipIm, 0);
+    // flip(showMap, flipIm, 0);
     // flip(src, src, 0);
     // imshow("flipped detected lines", flipIm);
 
@@ -201,6 +207,14 @@ double compute_p_can_see_thresh(double angle, double range, double angle_max)
     // double beta = 4;
     if (angle < angle_max)
         return 1;
+    
+    /* // Smoothing
+    if (angle < angle_max - 2 * M_PI / 180.0)
+        return 1;
+    else if (angle < angle_max + 2 * M_PI / 180.0)
+        return (angle_max + 2 * M_PI / 180.0 - angle) / (4 * M_PI / 180.0);
+    */
+
     // else if(angle < 3/2*max_angle)
     //     return 3 - 2 / max_angle * angle;
     // else if(angle < beta*max_angle)

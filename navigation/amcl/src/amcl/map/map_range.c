@@ -303,5 +303,5 @@ double compute_range(map_t *map, double ox, double oy, int ci, int cj, double ma
 // Return the probability of being a glass for a cell
 double get_glass_prob(map_t *map, int ci, int cj)
 {
-  return (map->cells[MAP_INDEX(map,ci,cj)].p_glass == -1)? 0.0 : map->cells[MAP_INDEX(map,ci,cj)].p_glass;
+  return map->cells[MAP_INDEX(map,ci,cj)].p_glass;
 }

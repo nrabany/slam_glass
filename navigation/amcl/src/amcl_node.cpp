@@ -983,7 +983,6 @@ AmclNode::convertMap( const nav_msgs::OccupancyGrid& map_msg )
 
   pz_mean = 0.0;
   nb_pz = 0;
-  time_pz = 0;
   angle_thresh = 90;
 
   // To create file or clear it if it already exists
@@ -1434,9 +1433,9 @@ AmclNode::laserReceived(const sensor_msgs::LaserScanConstPtr& laser_scan)
                hyps[max_weight_hyp].pf_pose_mean.v[2]);
 
       uint64_t nseconds = ros::Time::now().toNSec();
-      ofstream myfile2;
-      myfile2.open("/home/nicolas/catkin_ws/pos.txt", ios::out | ios::app);
-      myfile2 << nseconds << " " << hyps[max_weight_hyp].pf_pose_mean.v[0] << 
+      ofstream myfile;
+      myfile.open("/home/nicolas/catkin_ws/pos.txt", ios::out | ios::app);
+      myfile << nseconds << " " << hyps[max_weight_hyp].pf_pose_mean.v[0] << 
                             " " << hyps[max_weight_hyp].pf_pose_mean.v[1] <<
                             " " << hyps[max_weight_hyp].pf_pose_mean.v[2] << "\n";
 
