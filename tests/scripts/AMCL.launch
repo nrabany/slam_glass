@@ -7,7 +7,7 @@
   <arg name="bag_name"  default="output3"/>   
   <arg name="map_name"  default="MapWindow2bis"/>  
   <arg name="config_path"  default="$(find tests)/config/amcl.rviz"/>
-  <arg name="rosbag_rate"  default="0.25" />
+  <arg name="rosbag_rate"  default="0.5" />
 
   <!-- amcl parameters -->
   <arg name="update_min_d"        default="0.01" />
@@ -44,7 +44,7 @@
     <param name="odom_alpha3"       value="$(arg odom_alpha3)"/>
     <param name="odom_alpha4"       value="$(arg odom_alpha4)"/>
     <param name="laser_model_type"  value="beam"/>
-    <param name="laser_max_beams"   value="30"/>
+    <param name="laser_max_beams"   value="15"/>
     <param name="max_particles"     value="1500"/>
 
     <remap from="/scan" to="/first"/>
