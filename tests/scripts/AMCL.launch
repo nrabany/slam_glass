@@ -4,8 +4,8 @@
 
   <arg name="bag_path"  default="$(find tests)/bags/"/>
   <arg name="map_path"  default="$(find tests)/maps/"/>
-  <arg name="bag_name"  default="output3"/>   
-  <arg name="map_name"  default="MapWindow2bis"/>  
+  <arg name="bag_name"  default="b14f10"/>   <!-- output3-->
+  <arg name="map_name"  default="b14f10pc"/>   <!-- MapWindow2bis-->
   <arg name="config_path"  default="$(find tests)/config/amcl.rviz"/>
   <arg name="rosbag_rate"  default="0.5" />
 
@@ -24,16 +24,16 @@
 
 
   <!-- Playback rosbag -->
-  <node name="player" pkg="rosbag" type="play" output="screen" args="--clock --rate=$(arg rosbag_rate) $(arg bag_path)$(arg bag_name).bag"/>
+  <node name="player" pkg="rosbag" type="play" output="screen" args="-l --clock --rate=$(arg rosbag_rate) $(arg bag_path)$(arg bag_name).bag"/>
 
   <!-- TF between the robot and the laser base -->
   <!-- TF between the robot and the laser base -->
-  <node  name="tf_base_laser" pkg="tf" type="static_transform_publisher" args="0.08 0 0 0 0 0 /base_link /laser 1" />
+  <node  name="tf_base_laser" pkg="tf" type="static_transform_publisher" args="0.17 0 0 0 0 0 /base_link /laser 1" />
 
   <!-- Processing nodes -->
   <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_path)$(arg map_name).yaml" output="screen"/>
 
-  <node name="amcl" pkg="amcl" type="amcl" output="screen">
+  <node name="amcl" pkg="amcl" type="amcl" output="screen"> 
     <rosparam command="load" file="$(arg bag_path)/initial_conditions/$(arg bag_name).yaml" />
     <param name="update_min_d"          value="$(arg update_min_d)" />
     <param name="recovery_alpha_slow"   value="$(arg recovery_alpha_slow)" />
@@ -46,6 +46,8 @@
     <param name="laser_model_type"  value="beam"/>
     <param name="laser_max_beams"   value="15"/>
     <param name="max_particles"     value="1500"/>
+    <param name="localization_method_type"     value="fixed"/>
+    <!--param name="min_particles"     value="750"/-->
 
     <remap from="/scan" to="/first"/>
   </node>

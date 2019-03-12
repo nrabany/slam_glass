@@ -2,7 +2,7 @@
   <param name="use_sim_time" value="true"/>
   <arg name="bag_path"  default="$(find tests)/bags/"/>
   <arg name="config_path"  default="$(find tests)/config/gmapping.rviz"/>
-  <arg name="bag_name"  default="b14f10"/>
+  <arg name="bag_name"  default="starbucksf2"/>
   <arg name="rosbag_rate"  default="1" />  
   <!-- change the speed of building the map-->
 
@@ -12,7 +12,7 @@
   </node>
 
   <!-- TF between the robot and the laser base -->
-  <node  name="tf_static" pkg="tf" type="static_transform_publisher" args="0.08 0 0 0 0 0 /base_link /laser 1" />
+  <node  name="tf_static" pkg="tf" type="static_transform_publisher" args="0.17 0 0 0 0 0 /base_link /laser 1" />
 
   <!-- Processing nodes -->
   <node name="slam" pkg="gmapping" type="slam_gmapping" output="screen">

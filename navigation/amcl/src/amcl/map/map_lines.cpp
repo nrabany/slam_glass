@@ -59,9 +59,10 @@ void map_hough_lines(map_t *map, uint16_t minPoints)
             double theta_diff = abs(theta - map->lines[j].theta);
             double rho_add = abs(rho + map->lines[j].rho);
             // Here adjust parameters to group lines. !!rho_diff is in pixel!!
-            if ((rho_diff < 80 && theta_diff < 3 * M_PI / 180) || (rho_add < 80 && theta_diff - M_PI < 3 * M_PI / 180))
+            if ((rho_diff < 80 && theta_diff < 2 * M_PI / 180) || (rho_add < 80 && theta_diff - M_PI < 2 * M_PI / 180))
             {
                 new_group = false;
+                // TODO: average all rho and theta for each group of lines
                 break;
             }
         }
@@ -225,24 +226,33 @@ double compute_p_can_see_thresh(double angle, double range, double angle_max)
     return 0;
 }
 
-double compute_p_can_see_wide(double angle, double range)
+double compute_p_can_see_range(double angle, double range, double angle_max)
 {
     if (angle == -1)
         return 0.5;
 
-    // double max_angle = (range <= 5) ? -6.5 * range + 35 : -6.6 * 5 + 35;
-    double max_angle = (range <= 3) ? -4 * range + 15 : -4 * 3 + 15;
-    max_angle = max_angle * M_PI / 180.0;
+    double x0 = 1.5;
+    double y0 = angle_max;
+    double x1 = 3;
+    double y1 = 3; 
+    double m = (x1-x0)/(y1-y0);
+    double b = y0 - m*x0;
+    double angle_thresh = angle_max_from_range(range, m, b);
+    angle_thresh = angle_thresh * M_PI / 180.0;
 
-    double beta = 4;
-    if (angle < max_angle)
+    // double beta = 4;
+    if (angle < angle_thresh)
         return 1;
-    // else if(angle < 3/2*max_angle)
-    //     return 3 - 2 / max_angle * angle;
-    else if(angle < beta*max_angle)
-    {   
-        // cout << "max_angle: " << max_angle << ", angle: " << angle << ", p: " << angle / (max_angle*(4-1)) - 1 / (4-1) << endl;
-        return - 1 / (max_angle*(beta-1)) * angle + beta / (beta-1);
-    }
+
     return 0;
+}
+
+double angle_max_from_range(double range, double m, double b)
+{
+    if(range<1)
+        return m + b;
+    if(range>3)
+        return m*3+b;
+    
+    return m*range +b;
 }

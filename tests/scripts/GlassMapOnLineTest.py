@@ -493,9 +493,11 @@ class GlassMapBuilder():
         # Save image to *.pgm format with associated *.yaml file
         # Assign gray scale value between 0 and 1: 1 for free space / 0.80 for unknown / 0 to 0.40 for occupied
         #                                                                             --> beeing glass tends to 0.40
+        self.finalGlassMap[self.finalGlassMap <= 0.5] = 0.0/255.0
+        self.finalGlassMap[self.finalGlassMap > 0.5] = 0.0/255.0
         self.finalGlassMap[self.gridMap == -1] = 205.0/255.0
         self.finalGlassMap[self.gridMap == 0] = 254.0/255.0
-        self.finalGlassMap[self.gridMap > 0] = 100.0*self.finalGlassMap[self.gridMap > 0]/255.0
+        #self.finalGlassMap[self.gridMap > 0] = 100.0*self.finalGlassMap[self.gridMap > 0]/255.0
         
         # Remove after ------------------------------------
         # self.finalGlassMap[self.gridMap > 0] = 0.0
@@ -543,8 +545,9 @@ class GlassMapBuilder():
                      'resolution': self.mapMetaData.resolution,
                      'origin': [self.mapMetaData.origin.position.x, self.mapMetaData.origin.position.y, 0.0],
                      'negate': 0,
-                     'occupied_thresh': 0.65,
-                     'free_thresh': 0.196}
+                     'occupied_thresh': 0.50,
+                     'free_thresh': 0.196,
+                     'mode': 'glass_prob'}
 
         with open(path+filename+'.yaml', 'w') as yaml_file:
             yaml.dump(yaml_info, yaml_file, default_flow_style=False)
@@ -660,9 +663,22 @@ class GlassMapBuilder():
         alphas = np.delete(alphaAll, np.where(senRange>self.maxRange)) # alpha.shape (<1081,)
         senIntensity = np.delete(senIntensity, np.where(senRange>self.maxRange))
         senRange = np.delete(senRange, np.where(senRange>self.maxRange))
+        #--------------------------Modified--------------------------------------------------
+        # print('1. alphas.shape: ', alphas.shape, ' senRange.shape: ', senRange.shape)
+        alphas = np.delete(alphas, np.where(np.isnan(senRange))) # alpha.shape (<1081,)
+        senIntensity = np.delete(senIntensity, np.where(np.isnan(senRange)))
+        senRange = np.delete(senRange, np.where(np.isnan(senRange)))
+        # print('2. alphas.shape: ', alphas.shape, ' senRange.shape: ', senRange.shape)
+
+        if(alphas.shape > senRange.shape):
+            alphas = alphas[1:-1]
+        #------------------------------------------------------------------------------------
+
         
         # calculate incident angles
-        incidAngle = self.calIncidentAngle(senRange, alphas, showH=False, showL=False)
+        incidAngle = None
+        if alphas.shape == senRange.shape:
+            incidAngle = self.calIncidentAngle(senRange, alphas, showH=False, showL=False)
         if incidAngle is None:
             print("After calIncidentAngle: no valid incident angle can be calculated. Finish current loop")
             return

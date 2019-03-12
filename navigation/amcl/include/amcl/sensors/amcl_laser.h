@@ -31,6 +31,7 @@
 
 #include "amcl_sensor.h"
 #include "../map/map.h"
+#include <string>
 
 namespace amcl
 {
@@ -39,6 +40,8 @@ namespace amcl
 long double pz_mean;
 uint64_t nb_pz;
 double angle_thresh;
+std::string pathProb(150, ' ');
+std::string pathPos(150, ' '); 
 
 typedef enum
 {
@@ -46,6 +49,13 @@ typedef enum
   LASER_MODEL_LIKELIHOOD_FIELD,
   LASER_MODEL_LIKELIHOOD_FIELD_PROB
 } laser_model_t;
+
+typedef enum
+{
+  STANDARD,
+  FIXED_THRESH,
+  ADAPTIVE
+} localization_method_t;
 
 // Laser sensor data
 class AMCLLaserData : public AMCLSensorData
@@ -74,7 +84,8 @@ class AMCLLaser : public AMCLSensor
                             double z_rand,
                             double sigma_hit,
                             double labda_short,
-                            double chi_outlier);
+                            double chi_outlier,
+                            localization_method_t localization_method_type);
 
   public: void SetModelLikelihoodField(double z_hit,
                                        double z_rand,
@@ -153,6 +164,8 @@ class AMCLLaser : public AMCLSensor
   private: double lambda_short;
   // Threshold for outlier rejection (unused)
   private: double chi_outlier;
+
+  private: localization_method_t localization_method;
 };
 
 

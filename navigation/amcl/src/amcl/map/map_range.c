@@ -141,12 +141,6 @@ cells_index_t map_find_cells(map_t *map, double ox, double oy, double oa, double
   x1 = MAP_GXWX(map,ox + max_range * cos(oa));
   y1 = MAP_GYWY(map,oy + max_range * sin(oa));
 
-  // Initialize the cells to the ones corresponding to maximum range
-  nearest_cells.i_first = x1;
-  nearest_cells.j_first = y1;
-  nearest_cells.i_second = x1;
-  nearest_cells.j_second = y1;
-
   if(abs(y1-y0) > abs(x1-x0))
     steep = 1;
   else
@@ -162,6 +156,12 @@ cells_index_t map_find_cells(map_t *map, double ox, double oy, double oa, double
     x1 = y1;
     y1 = tmp;
   }
+
+  // Initialize the cells to the ones corresponding to maximum range
+  nearest_cells.i_first = x1;
+  nearest_cells.j_first = y1;
+  nearest_cells.i_second = x1;
+  nearest_cells.j_second = y1;
 
   deltax = abs(x1-x0);
   deltay = abs(y1-y0);
@@ -188,7 +188,7 @@ cells_index_t map_find_cells(map_t *map, double ox, double oy, double oa, double
         nearest_cells.j_first = x;
         ncells_found += 1;
         same_obstacle = 1;
-        if(map->cells[MAP_INDEX(map,y,x)].p_glass<0.1)
+        if(!MAP_VALID(map,x,y) || map->cells[MAP_INDEX(map,y,x)].p_glass<0.1)
         {
           nearest_cells.i_second = nearest_cells.i_first;
           nearest_cells.j_second = nearest_cells.j_first;
@@ -204,7 +204,7 @@ cells_index_t map_find_cells(map_t *map, double ox, double oy, double oa, double
         nearest_cells.j_first = y;
         ncells_found += 1;
         same_obstacle = 1;
-        if(map->cells[MAP_INDEX(map,x,y)].p_glass<0.1)
+        if(!MAP_VALID(map,x,y) || map->cells[MAP_INDEX(map,x,y)].p_glass<0.1)
         {
           nearest_cells.i_second = nearest_cells.i_first;
           nearest_cells.j_second = nearest_cells.j_first;
@@ -235,7 +235,7 @@ cells_index_t map_find_cells(map_t *map, double ox, double oy, double oa, double
           nearest_cells.j_first = x;
           ncells_found += 1;
           same_obstacle = 1;
-          if(map->cells[MAP_INDEX(map,y,x)].p_glass<0.1)
+          if(!MAP_VALID(map,x,y) || map->cells[MAP_INDEX(map,y,x)].p_glass<0.1)
           {
             nearest_cells.i_second = nearest_cells.i_first;
             nearest_cells.j_second = nearest_cells.j_first;
@@ -265,7 +265,7 @@ cells_index_t map_find_cells(map_t *map, double ox, double oy, double oa, double
           nearest_cells.j_first = y;
           ncells_found += 1;
           same_obstacle = 1;
-          if(map->cells[MAP_INDEX(map,x,y)].p_glass<0.1)
+          if(!MAP_VALID(map,x,y) || map->cells[MAP_INDEX(map,x,y)].p_glass<0.1)
           {
             nearest_cells.i_second = nearest_cells.i_first;
             nearest_cells.j_second = nearest_cells.j_first;
@@ -303,5 +303,8 @@ double compute_range(map_t *map, double ox, double oy, int ci, int cj, double ma
 // Return the probability of being a glass for a cell
 double get_glass_prob(map_t *map, int ci, int cj)
 {
+  if(!MAP_VALID(map,ci,cj))
+    return 0.0;
+
   return map->cells[MAP_INDEX(map,ci,cj)].p_glass;
 }

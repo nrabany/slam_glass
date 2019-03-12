@@ -78,9 +78,19 @@
 #include <fstream>
 using namespace std;
 
+#include <sys/stat.h>
+#include <string>
+
 #define NEW_UNIFORM_SAMPLING 1
 
 using namespace amcl;
+
+// Test if file already exist
+inline bool existing_file_test (const std::string& name) 
+{  
+  struct stat buffer;
+  return (stat (name.c_str(), &buffer) == 0); 
+}
 
 // Pose hypothesis
 typedef struct
@@ -277,6 +287,8 @@ class AmclNode
     double init_cov_[3];
     laser_model_t laser_model_type_;
     bool tf_broadcast_;
+    
+    localization_method_t localization_method_type_;
 
     void reconfigureCB(amcl::AMCLConfig &config, uint32_t level);
 
@@ -416,6 +428,22 @@ AmclNode::AmclNode() :
     odom_model_type_ = ODOM_MODEL_DIFF;
   }
 
+  std::string tmp_localization_method;
+  private_nh_.param("localization_method_type", tmp_localization_method, std::string("standard"));
+  if(tmp_localization_method == "standard")
+    localization_method_type_ = STANDARD;
+  else if(tmp_localization_method == "fixed")
+    localization_method_type_ = FIXED_THRESH;
+  else if(tmp_localization_method == "adaptive"){
+    localization_method_type_ = ADAPTIVE;
+  }
+  else
+  {
+    ROS_WARN("Unknown localization method type \"%s\"; defaulting to standard method",
+             tmp_localization_method.c_str());
+    localization_method_type_ = STANDARD;
+  }
+
   private_nh_.param("update_min_d", d_thresh_, 0.2);
   private_nh_.param("update_min_a", a_thresh_, M_PI/6.0);
   private_nh_.param("odom_frame_id", odom_frame_id_, std::string("odom"));
@@ -547,6 +575,13 @@ void AmclNode::reconfigureCB(AMCLConfig &config, uint32_t level)
   else if(config.odom_model_type == "omni-corrected")
     odom_model_type_ = ODOM_MODEL_OMNI_CORRECTED;
 
+  // if(config.localization_method_type == "standard")
+  //   localization_method_type_ = STANDARD;
+  // else if(config.localization_method_type == "fixed")
+  //   localization_method_type_ = FIXED_THRESH;
+  // else if(config.localization_method_type == "adaptive")
+  //   localization_method_type_ = ADAPTIVE;
+
   if(config.min_particles > config.max_particles)
   {
     ROS_WARN("You've set min_particles to be greater than max particles, this isn't allowed so they'll be set to be equal.");
@@ -601,7 +636,7 @@ void AmclNode::reconfigureCB(AMCLConfig &config, uint32_t level)
   ROS_ASSERT(laser_);
   if(laser_model_type_ == LASER_MODEL_BEAM)
     laser_->SetModelBeam(z_hit_, z_short_, z_max_, z_rand_,
-                         sigma_hit_, lambda_short_, 0.0);
+                         sigma_hit_, lambda_short_, 0.0, localization_method_type_);
   else if(laser_model_type_ == LASER_MODEL_LIKELIHOOD_FIELD_PROB){
     ROS_INFO("Initializing likelihood field model; this can take some time on large maps...");
     laser_->SetModelLikelihoodFieldProb(z_hit_, z_rand_, sigma_hit_,
@@ -895,7 +930,7 @@ AmclNode::handleMapMessage(const nav_msgs::OccupancyGrid& msg)
   ROS_ASSERT(laser_);
   if(laser_model_type_ == LASER_MODEL_BEAM)
     laser_->SetModelBeam(z_hit_, z_short_, z_max_, z_rand_,
-                         sigma_hit_, lambda_short_, 0.0);
+                         sigma_hit_, lambda_short_, 0.0, localization_method_type_);
   else if(laser_model_type_ == LASER_MODEL_LIKELIHOOD_FIELD_PROB){
     ROS_INFO("Initializing likelihood field model; this can take some time on large maps...");
     laser_->SetModelLikelihoodFieldProb(z_hit_, z_rand_, sigma_hit_,
@@ -979,26 +1014,38 @@ AmclNode::convertMap( const nav_msgs::OccupancyGrid& map_msg )
       map->gridData[i] = 255;
     }
   }
-  map_hough_lines(map, 40);
+  map_hough_lines(map, 30);
 
   pz_mean = 0.0;
   nb_pz = 0;
   angle_thresh = 90;
 
   // To create file or clear it if it already exists
+  pathProb = "/home/nicolas/catkin_ws/src/tests/python/b14f10_files_py2/b14f10Prob.txt";
+  pathPos = "/home/nicolas/catkin_ws/src/tests/python/b14f10_files_py2/b14f10Pos.txt";
+
+  for(uint8_t i=1; i<100; i++)
+  {
+    pathProb = "/home/nicolas/catkin_ws/src/tests/python/b14f10_files_py2/test/b14f10Prob" + std::to_string(i) +  ".txt";
+    if(!existing_file_test(pathProb))
+    {
+      pathPos = "/home/nicolas/catkin_ws/src/tests/python/b14f10_files_py2/test/b14f10Pos" + std::to_string(i) +  ".txt";
+      break;
+    }
+  }
+
   ofstream myfile;
-  myfile.open ("/home/nicolas/catkin_ws/prob.txt");
+  myfile.open (pathProb.c_str());
   myfile.close();
 
-  // To create file or clear it if it already exists
   ofstream myfile2;
-  myfile2.open ("/home/nicolas/catkin_ws/pos.txt");
+  myfile2.open (pathPos.c_str());
   myfile2.close();
 
   // To create file or clear it if it already exists
-  ofstream myfile3;
-  myfile2.open ("/home/nicolas/catkin_ws/threshVal.txt");
-  myfile2.close();
+  // ofstream myfile3;
+  // myfile2.open ("/home/nicolas/catkin_ws/ThreshVal.txt");
+  // myfile2.close();
 
   return map;
 }
@@ -1434,10 +1481,12 @@ AmclNode::laserReceived(const sensor_msgs::LaserScanConstPtr& laser_scan)
 
       uint64_t nseconds = ros::Time::now().toNSec();
       ofstream myfile;
-      myfile.open("/home/nicolas/catkin_ws/pos.txt", ios::out | ios::app);
+      myfile.open(pathPos.c_str(), ios::out | ios::app);
       myfile << nseconds << " " << hyps[max_weight_hyp].pf_pose_mean.v[0] << 
                             " " << hyps[max_weight_hyp].pf_pose_mean.v[1] <<
-                            " " << hyps[max_weight_hyp].pf_pose_mean.v[2] << "\n";
+                            " " << hyps[max_weight_hyp].pf_pose_mean.v[2] <<
+                            " " << hyps[max_weight_hyp].pf_pose_cov.m[2][2] <<
+                            " " << hyps[max_weight_hyp].weight << "\n";
 
       // subtracting base to odom from map to base and send map to odom instead
       geometry_msgs::PoseStamped odom_to_map;
