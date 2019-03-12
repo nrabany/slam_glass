@@ -289,6 +289,10 @@ class AmclNode
     bool tf_broadcast_;
     
     localization_method_t localization_method_type_;
+    int thresh_val_;
+    double Kp_val_;
+    bool cheat_;
+    std::string info_path_;
 
     void reconfigureCB(amcl::AMCLConfig &config, uint32_t level);
 
@@ -444,6 +448,11 @@ AmclNode::AmclNode() :
     localization_method_type_ = STANDARD;
   }
 
+  private_nh_.param("thresh_val", thresh_val_, 30);
+  private_nh_.param("Kp", Kp_val_, 0.00005);
+  private_nh_.param("cheat", cheat_, false);  
+  private_nh_.param("info_path", info_path_, std::string("unknow"));  
+  
   private_nh_.param("update_min_d", d_thresh_, 0.2);
   private_nh_.param("update_min_a", a_thresh_, M_PI/6.0);
   private_nh_.param("odom_frame_id", odom_frame_id_, std::string("odom"));
@@ -575,13 +584,6 @@ void AmclNode::reconfigureCB(AMCLConfig &config, uint32_t level)
   else if(config.odom_model_type == "omni-corrected")
     odom_model_type_ = ODOM_MODEL_OMNI_CORRECTED;
 
-  // if(config.localization_method_type == "standard")
-  //   localization_method_type_ = STANDARD;
-  // else if(config.localization_method_type == "fixed")
-  //   localization_method_type_ = FIXED_THRESH;
-  // else if(config.localization_method_type == "adaptive")
-  //   localization_method_type_ = ADAPTIVE;
-
   if(config.min_particles > config.max_particles)
   {
     ROS_WARN("You've set min_particles to be greater than max particles, this isn't allowed so they'll be set to be equal.");
@@ -636,7 +638,7 @@ void AmclNode::reconfigureCB(AMCLConfig &config, uint32_t level)
   ROS_ASSERT(laser_);
   if(laser_model_type_ == LASER_MODEL_BEAM)
     laser_->SetModelBeam(z_hit_, z_short_, z_max_, z_rand_,
-                         sigma_hit_, lambda_short_, 0.0, localization_method_type_);
+                         sigma_hit_, lambda_short_, 0.0, localization_method_type_, thresh_val_, Kp_val_, cheat_);
   else if(laser_model_type_ == LASER_MODEL_LIKELIHOOD_FIELD_PROB){
     ROS_INFO("Initializing likelihood field model; this can take some time on large maps...");
     laser_->SetModelLikelihoodFieldProb(z_hit_, z_rand_, sigma_hit_,
@@ -930,7 +932,7 @@ AmclNode::handleMapMessage(const nav_msgs::OccupancyGrid& msg)
   ROS_ASSERT(laser_);
   if(laser_model_type_ == LASER_MODEL_BEAM)
     laser_->SetModelBeam(z_hit_, z_short_, z_max_, z_rand_,
-                         sigma_hit_, lambda_short_, 0.0, localization_method_type_);
+                         sigma_hit_, lambda_short_, 0.0, localization_method_type_, thresh_val_, Kp_val_,cheat_);
   else if(laser_model_type_ == LASER_MODEL_LIKELIHOOD_FIELD_PROB){
     ROS_INFO("Initializing likelihood field model; this can take some time on large maps...");
     laser_->SetModelLikelihoodFieldProb(z_hit_, z_rand_, sigma_hit_,
@@ -1021,15 +1023,30 @@ AmclNode::convertMap( const nav_msgs::OccupancyGrid& map_msg )
   angle_thresh = 90;
 
   // To create file or clear it if it already exists
-  pathProb = "/home/nicolas/catkin_ws/src/tests/python/b14f10_files_py2/b14f10Prob.txt";
-  pathPos = "/home/nicolas/catkin_ws/src/tests/python/b14f10_files_py2/b14f10Pos.txt";
+  pathProb = "/home/nicolas/catkin_ws/src/tests/python/b14f10_files_py2/Prob.txt";
+  pathPos = "/home/nicolas/catkin_ws/src/tests/python/b14f10_files_py2/Pos.txt";
 
+  std::string method(" ",20);
+  if (laser_model_type_ == LASER_MODEL_LIKELIHOOD_FIELD)
+    method = "Likelihood";
+  if(laser_model_type_ == LASER_MODEL_BEAM)
+  {  
+    if (localization_method_type_ == STANDARD)
+      method = "Standard";
+    if (localization_method_type_ == FIXED_THRESH)
+      method = "Fixed" + std::to_string(thresh_val_);
+    if (localization_method_type_ == ADAPTIVE)
+      method = "Adaptive" + std::to_string(Kp_val_);
+    if (cheat_)
+      method = method + "Cheat";
+  }
+  
   for(uint8_t i=1; i<100; i++)
   {
-    pathProb = "/home/nicolas/catkin_ws/src/tests/python/b14f10_files_py2/test/b14f10Prob" + std::to_string(i) +  ".txt";
+    pathProb = "/home/nicolas/catkin_ws/src/tests/python/b14f10_files_py2/" + info_path_ + method + "Prob" +  std::to_string(i) +  ".txt";
     if(!existing_file_test(pathProb))
     {
-      pathPos = "/home/nicolas/catkin_ws/src/tests/python/b14f10_files_py2/test/b14f10Pos" + std::to_string(i) +  ".txt";
+      pathPos = "/home/nicolas/catkin_ws/src/tests/python/b14f10_files_py2/" + info_path_ + method + "Pos" + std::to_string(i) +  ".txt";
       break;
     }
   }

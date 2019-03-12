@@ -46,8 +46,13 @@
     <param name="laser_model_type"  value="beam"/>
     <param name="laser_max_beams"   value="15"/>
     <param name="max_particles"     value="1500"/>
-    <param name="localization_method_type"     value="fixed"/>
     <!--param name="min_particles"     value="750"/-->
+
+    <param name="localization_method_type"     value="adaptive"/>
+    <param name="thresh_val"   value="30"/>
+    <param name="Kp"   value="0.00005"/>
+    <param name="cheat"   value="false"/>
+    <param name="info_path"   value="$(arg map_name)"/>
 
     <remap from="/scan" to="/first"/>
   </node>
