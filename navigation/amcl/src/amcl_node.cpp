@@ -292,6 +292,7 @@ class AmclNode
     int thresh_val_;
     double Kp_val_;
     bool cheat_;
+    double sigma_hit_behind_;
     std::string info_path_;
 
     void reconfigureCB(amcl::AMCLConfig &config, uint32_t level);
@@ -451,6 +452,7 @@ AmclNode::AmclNode() :
   private_nh_.param("thresh_val", thresh_val_, 30);
   private_nh_.param("Kp", Kp_val_, 0.00005);
   private_nh_.param("cheat", cheat_, false);  
+  private_nh_.param("coef_sigma_behind", sigma_hit_behind_, 0.4);
   private_nh_.param("info_path", info_path_, std::string("unknow"));  
   
   private_nh_.param("update_min_d", d_thresh_, 0.2);
@@ -638,7 +640,7 @@ void AmclNode::reconfigureCB(AMCLConfig &config, uint32_t level)
   ROS_ASSERT(laser_);
   if(laser_model_type_ == LASER_MODEL_BEAM)
     laser_->SetModelBeam(z_hit_, z_short_, z_max_, z_rand_,
-                         sigma_hit_, lambda_short_, 0.0, localization_method_type_, thresh_val_, Kp_val_, cheat_);
+                         sigma_hit_, lambda_short_, 0.0, localization_method_type_, thresh_val_, Kp_val_, cheat_, sigma_hit_behind_);
   else if(laser_model_type_ == LASER_MODEL_LIKELIHOOD_FIELD_PROB){
     ROS_INFO("Initializing likelihood field model; this can take some time on large maps...");
     laser_->SetModelLikelihoodFieldProb(z_hit_, z_rand_, sigma_hit_,
@@ -932,7 +934,7 @@ AmclNode::handleMapMessage(const nav_msgs::OccupancyGrid& msg)
   ROS_ASSERT(laser_);
   if(laser_model_type_ == LASER_MODEL_BEAM)
     laser_->SetModelBeam(z_hit_, z_short_, z_max_, z_rand_,
-                         sigma_hit_, lambda_short_, 0.0, localization_method_type_, thresh_val_, Kp_val_,cheat_);
+                         sigma_hit_, lambda_short_, 0.0, localization_method_type_, thresh_val_, Kp_val_,cheat_, sigma_hit_behind_);
   else if(laser_model_type_ == LASER_MODEL_LIKELIHOOD_FIELD_PROB){
     ROS_INFO("Initializing likelihood field model; this can take some time on large maps...");
     laser_->SetModelLikelihoodFieldProb(z_hit_, z_rand_, sigma_hit_,
@@ -1023,8 +1025,8 @@ AmclNode::convertMap( const nav_msgs::OccupancyGrid& map_msg )
   angle_thresh = 90;
 
   // To create file or clear it if it already exists
-  pathProb = "/home/nicolas/catkin_ws/src/tests/python/b14f10_files_py2/Prob.txt";
-  pathPos = "/home/nicolas/catkin_ws/src/tests/python/b14f10_files_py2/Pos.txt";
+  pathProb = "/home/nicolas/catkin_ws/src/tests/python/b14f10_files_py2/ProbPart.txt";
+  pathPos = "/home/nicolas/catkin_ws/src/tests/python/b14f10_files_py2/PosPart.txt";
 
   std::string method(" ",20);
   if (laser_model_type_ == LASER_MODEL_LIKELIHOOD_FIELD)
@@ -1039,14 +1041,16 @@ AmclNode::convertMap( const nav_msgs::OccupancyGrid& map_msg )
       method = "Adaptive" + std::to_string(Kp_val_);
     if (cheat_)
       method = method + "Cheat";
+    if (sigma_hit_behind_ != 0.4)
+      method = method + "Sigma" + std::to_string(sigma_hit_behind_);
   }
   
   for(uint8_t i=1; i<100; i++)
   {
-    pathProb = "/home/nicolas/catkin_ws/src/tests/python/b14f10_files_py2/" + info_path_ + method + "Prob" +  std::to_string(i) +  ".txt";
+    pathProb = "/home/nicolas/catkin_ws/src/tests/python/b14f10_files_py2/new/" + info_path_ + method + "Prob" +  std::to_string(i) +  ".txt";
     if(!existing_file_test(pathProb))
     {
-      pathPos = "/home/nicolas/catkin_ws/src/tests/python/b14f10_files_py2/" + info_path_ + method + "Pos" + std::to_string(i) +  ".txt";
+      pathPos = "/home/nicolas/catkin_ws/src/tests/python/b14f10_files_py2/new/" + info_path_ + method + "Pos" + std::to_string(i) +  ".txt";
       break;
     }
   }
@@ -1394,6 +1398,12 @@ AmclNode::laserReceived(const sensor_msgs::LaserScanConstPtr& laser_scan)
       cloud_msg.header.stamp = ros::Time::now();
       cloud_msg.header.frame_id = global_frame_id_;
       cloud_msg.poses.resize(set->sample_count);
+      //////////////////////////////////7
+      // uint64_t nseconds = ros::Time::now().toNSec();
+      // ofstream myfile;
+      // myfile.open(pathPos.c_str(), ios::out | ios::app);
+      // myfile << nseconds;
+      ///////////////////////////////////
       for(int i=0;i<set->sample_count;i++)
       {
         cloud_msg.poses[i].position.x = set->samples[i].pose.v[0];
@@ -1402,7 +1412,15 @@ AmclNode::laserReceived(const sensor_msgs::LaserScanConstPtr& laser_scan)
         tf2::Quaternion q;
         q.setRPY(0, 0, set->samples[i].pose.v[2]);
         tf2::convert(q, cloud_msg.poses[i].orientation);
+        
+        ////////////////////////////////
+        // myfile << " " << set->samples[i].pose.v[0] << 
+        //           " " << set->samples[i].pose.v[1];
+        ////////////////////////////////
       }
+      ////////////////////////////////
+      // myfile << "\n";
+      ////////////////////////////////
       particlecloud_pub_.publish(cloud_msg);
     }
   }
@@ -1502,6 +1520,7 @@ AmclNode::laserReceived(const sensor_msgs::LaserScanConstPtr& laser_scan)
       myfile << nseconds << " " << hyps[max_weight_hyp].pf_pose_mean.v[0] << 
                             " " << hyps[max_weight_hyp].pf_pose_mean.v[1] <<
                             " " << hyps[max_weight_hyp].pf_pose_mean.v[2] <<
+                            " " << hyps[max_weight_hyp].pf_pose_cov.m[1][1] <<
                             " " << hyps[max_weight_hyp].pf_pose_cov.m[2][2] <<
                             " " << hyps[max_weight_hyp].weight << "\n";
 

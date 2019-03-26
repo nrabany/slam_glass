@@ -68,6 +68,9 @@ typedef struct
   // Range
   double rho;
 
+  // Number of lines that were grouped
+  uint8_t nb;
+
 } map_line_t;
 
 // Description for a map

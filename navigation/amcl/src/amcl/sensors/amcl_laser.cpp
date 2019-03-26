@@ -78,7 +78,8 @@ void AMCLLaser::SetModelBeam(double z_hit,
                              localization_method_t localization_method_type,
                              int thresh_val,
                              double Kp,
-                             bool cheat)
+                             bool cheat,
+                             double sigma_hit_behind)
 {
   this->model_type = LASER_MODEL_BEAM;
   this->z_hit = z_hit;
@@ -92,6 +93,7 @@ void AMCLLaser::SetModelBeam(double z_hit,
   this->thresh_val = thresh_val;
   this->Kp = Kp;
   this->cheat = cheat;
+  this->sigma_hit_behind = sigma_hit_behind;
 }
 
 void AMCLLaser::SetModelLikelihoodField(double z_hit,
@@ -172,13 +174,20 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
 
   vector<double> p_vector; 
 
-  p_vector.reserve(self->max_beams);
+  p_vector.reserve(self->max_beams/2);
 
   double psee, phit, obsAlpha;
 
   total_weight = 0.0;
 
   double first_range, second_range, laser_range, prob, i_angle = -1;
+
+  ///////////////////////////////
+  // uint64_t nseconds = ros::Time::now().toNSec();
+  // ofstream myfile;
+  // myfile.open(pathProb.c_str(), ios::out | ios::app);
+  // myfile << nseconds;
+  //////////////////////////////////
 
   // Compute the sample weights
   for (j = 0; j < set->sample_count; j++)
@@ -275,10 +284,10 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
         pz += self->z_hit * exp(-(z * z) / (2 * self->sigma_hit * self->sigma_hit)) * p_glass * p_can_see;
 
         // Part 1c: good, but noisy, hit behind
-        if(self->cheat && p_glass > 0.5 && p_can_see<0.2 && obs_range==60.0)
+        if(self->cheat && p_glass > 0.4 && p_can_see<0.2 && obs_range==60.0)
           map_range_behind = 60.0;
         z_behind = obs_range - map_range_behind;
-        pz += self->z_hit * exp(-(z_behind * z_behind) / (2 * 4 * self->sigma_hit * self->sigma_hit)) * p_glass * (1 - p_can_see);
+        pz += self->z_hit * exp(-(z_behind * z_behind) / (2 * self->sigma_hit_behind * self->sigma_hit_behind)) * p_glass * (1 - p_can_see);
       }
       if (self->localization_method == ADAPTIVE)
       {
@@ -287,10 +296,10 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
         pz += self->z_hit * exp(-(z * z) / (2 * self->sigma_hit * self->sigma_hit)) * p_glass * p_can_see;
 
         // Part 1c: good, but noisy, hit behind
-        if(self->cheat && p_glass > 0.5 && p_can_see<0.2 && obs_range==60.0)
+        if(self->cheat && p_glass > 0.4 && p_can_see<0.2 && obs_range==60.0)
           map_range_behind = 60.0;
         z_behind = obs_range - map_range_behind;
-        pz += self->z_hit * exp(-(z_behind * z_behind) / (2 * 4 * self->sigma_hit * self->sigma_hit)) * p_glass * (1 - p_can_see);
+        pz += self->z_hit * exp(-(z_behind * z_behind) / (2 * self->sigma_hit_behind * self->sigma_hit_behind)) * p_glass * (1 - p_can_see);
       
         // Adaptive nicolas-Jiang Method, a P controller is used for getting to the right value of angle_thresh.
         uint64_t seconds = ros::Time::now().toSec();
@@ -300,7 +309,7 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
         double err_bound = 15;
         double err_min = 0;
 
-        if(p_glass > 0.5 && obs_consider && abs(map_range - map_range_behind) > 0.3)
+        if(p_glass > 0.4 && obs_consider && abs(map_range - map_range_behind) > 0.3)
         {
           // Here if angle > alpha_thresh and detect glass
           if(abs(z) < 2*self->sigma_hit && p_can_see < 0.2)
@@ -394,9 +403,13 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
 
     sample->weight *= p;
     total_weight += sample->weight;
+    ////////////////////////
+    // myfile << " " << sample->weight;
+    ///////////////////////////
   }
   // cout << "1st: " << first_range << ", 2nd: " << second_range << ", laser: " << laser_range << " " << endl;
   // cout << "p_glass: " << prob << ", inc angle: " << i_angle << " " << endl;
+  
   // Write pz to file
   uint64_t nseconds = ros::Time::now().toNSec();
   ofstream myfile;
@@ -407,6 +420,11 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
     myfile << " " << p_vector[ii];
   }
   myfile << "\n";
+  
+
+  ////////////////77
+  //myfile << "\n";
+  //////////////////////
 
   // ofstream myfile2;
   // myfile2.open("/home/nicolas/catkin_ws/ThreshVal.txt", ios::out | ios::app);

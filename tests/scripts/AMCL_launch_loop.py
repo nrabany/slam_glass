@@ -8,7 +8,7 @@ import subprocess
 roscore = subprocess.Popen('roscore')
 time.sleep(3)  # wait a bit to be sure the roscore is really launched
 
-for i in range(40):
+for i in range(20):
     rospy.init_node('en_Mapping', anonymous=True)
     uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
     roslaunch.configure_logging(uuid)
@@ -16,7 +16,7 @@ for i in range(40):
     launch.start()
     rospy.loginfo("started")
 
-    time.sleep(1130) # 1130
+    time.sleep(2260) # 1130
     # 3 seconds later
     launch.shutdown()
     time.sleep(10)

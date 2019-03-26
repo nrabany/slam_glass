@@ -88,7 +88,8 @@ class AMCLLaser : public AMCLSensor
                             localization_method_t localization_method_type,
                             int thresh_val,
                             double Kp,
-                            bool cheat);
+                            bool cheat,
+                            double sigma_hit_behind);
 
   public: void SetModelLikelihoodField(double z_hit,
                                        double z_rand,
@@ -172,6 +173,7 @@ class AMCLLaser : public AMCLSensor
   private: int thresh_val;
   private: double Kp;
   private: bool cheat;
+  private: double sigma_hit_behind;
 };
 
 

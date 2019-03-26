@@ -5,7 +5,7 @@
   <arg name="bag_path"  default="$(find tests)/bags/"/>
   <arg name="map_path"  default="$(find tests)/maps/"/>
   <arg name="bag_name"  default="b14f10"/>   <!-- output3-->
-  <arg name="map_name"  default="b14f10pc"/>   <!-- MapWindow2bis-->
+  <arg name="map_name"  default="b14f10"/>   <!-- MapWindow2bis-->
   <arg name="config_path"  default="$(find tests)/config/amcl.rviz"/>
   <arg name="rosbag_rate"  default="0.5" />
 
@@ -44,11 +44,11 @@
     <param name="odom_alpha3"       value="$(arg odom_alpha3)"/>
     <param name="odom_alpha4"       value="$(arg odom_alpha4)"/>
     <param name="laser_model_type"  value="beam"/>
-    <param name="laser_max_beams"   value="15"/>
-    <param name="max_particles"     value="1500"/>
-    <!--param name="min_particles"     value="750"/-->
+    <param name="laser_max_beams"   value="30"/>
+    <param name="max_particles"     value="1000"/>
+    <!--param name="min_particles"     value="100"/-->
 
-    <param name="localization_method_type"     value="adaptive"/>
+    <param name="localization_method_type"     value="standard"/>
     <param name="thresh_val"   value="30"/>
     <param name="Kp"   value="0.00005"/>
     <param name="cheat"   value="false"/>

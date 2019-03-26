@@ -59,9 +59,13 @@ void map_hough_lines(map_t *map, uint16_t minPoints)
             double theta_diff = abs(theta - map->lines[j].theta);
             double rho_add = abs(rho + map->lines[j].rho);
             // Here adjust parameters to group lines. !!rho_diff is in pixel!!
-            if ((rho_diff < 80 && theta_diff < 2 * M_PI / 180) || (rho_add < 80 && theta_diff - M_PI < 2 * M_PI / 180))
+            if ((rho_diff < 30 && theta_diff < 2 * M_PI / 180) || (rho_add < 30 && theta_diff - M_PI < 2 * M_PI / 180))
             {
                 new_group = false;
+                map->lines[j].rho = (map->lines[j].nb * map->lines[j].rho + rho)/(map->lines[j].nb+1);
+                map->lines[j].theta = (map->lines[j].nb * map->lines[j].theta + theta)/(map->lines[j].nb+1);
+
+                map->lines[j].nb += 1;
                 // TODO: average all rho and theta for each group of lines
                 break;
             }
@@ -81,6 +85,7 @@ void map_hough_lines(map_t *map, uint16_t minPoints)
             map_line_t mline;
             mline.rho = rho;
             mline.theta = theta;
+            mline.nb = 1;
             map->lines[map->nb_lines - 1] = mline;
 
             /*-----DRAW LINES--------------------------------------------------------------------*/
