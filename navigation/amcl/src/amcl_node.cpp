@@ -291,9 +291,9 @@ class AmclNode
     localization_method_t localization_method_type_;
     int thresh_val_;
     double Kp_val_;
-    bool cheat_;
     double sigma_hit_behind_;
     std::string info_path_;
+    bool save_data_;
 
     void reconfigureCB(amcl::AMCLConfig &config, uint32_t level);
 
@@ -451,10 +451,10 @@ AmclNode::AmclNode() :
 
   private_nh_.param("thresh_val", thresh_val_, 30);
   private_nh_.param("Kp", Kp_val_, 0.00005);
-  private_nh_.param("cheat", cheat_, false);  
-  private_nh_.param("coef_sigma_behind", sigma_hit_behind_, 0.4);
+  private_nh_.param("coef_sigma_behind", sigma_hit_behind_, 0.2);
   private_nh_.param("info_path", info_path_, std::string("unknow"));  
-  
+  private_nh_.param("save_data", save_data_, false);
+
   private_nh_.param("update_min_d", d_thresh_, 0.2);
   private_nh_.param("update_min_a", a_thresh_, M_PI/6.0);
   private_nh_.param("odom_frame_id", odom_frame_id_, std::string("odom"));
@@ -640,7 +640,7 @@ void AmclNode::reconfigureCB(AMCLConfig &config, uint32_t level)
   ROS_ASSERT(laser_);
   if(laser_model_type_ == LASER_MODEL_BEAM)
     laser_->SetModelBeam(z_hit_, z_short_, z_max_, z_rand_,
-                         sigma_hit_, lambda_short_, 0.0, localization_method_type_, thresh_val_, Kp_val_, cheat_, sigma_hit_behind_);
+                         sigma_hit_, lambda_short_, 0.0, localization_method_type_, thresh_val_, Kp_val_, sigma_hit_behind_);
   else if(laser_model_type_ == LASER_MODEL_LIKELIHOOD_FIELD_PROB){
     ROS_INFO("Initializing likelihood field model; this can take some time on large maps...");
     laser_->SetModelLikelihoodFieldProb(z_hit_, z_rand_, sigma_hit_,
@@ -934,7 +934,7 @@ AmclNode::handleMapMessage(const nav_msgs::OccupancyGrid& msg)
   ROS_ASSERT(laser_);
   if(laser_model_type_ == LASER_MODEL_BEAM)
     laser_->SetModelBeam(z_hit_, z_short_, z_max_, z_rand_,
-                         sigma_hit_, lambda_short_, 0.0, localization_method_type_, thresh_val_, Kp_val_,cheat_, sigma_hit_behind_);
+                         sigma_hit_, lambda_short_, 0.0, localization_method_type_, thresh_val_, Kp_val_, sigma_hit_behind_);
   else if(laser_model_type_ == LASER_MODEL_LIKELIHOOD_FIELD_PROB){
     ROS_INFO("Initializing likelihood field model; this can take some time on large maps...");
     laser_->SetModelLikelihoodFieldProb(z_hit_, z_rand_, sigma_hit_,
@@ -1018,55 +1018,60 @@ AmclNode::convertMap( const nav_msgs::OccupancyGrid& map_msg )
       map->gridData[i] = 255;
     }
   }
-  map_hough_lines(map, 30);
+  map_hough_lines(map, 15);
 
   pz_mean = 0.0;
   nb_pz = 0;
   angle_thresh = 90;
+  timeCheck = 0.0;
 
   // To create file or clear it if it already exists
-  pathProb = "/home/nicolas/catkin_ws/src/tests/python/b14f10_files_py2/ProbPart.txt";
-  pathPos = "/home/nicolas/catkin_ws/src/tests/python/b14f10_files_py2/PosPart.txt";
+  save_file = save_data_;
 
-  std::string method(" ",20);
-  if (laser_model_type_ == LASER_MODEL_LIKELIHOOD_FIELD)
-    method = "Likelihood";
-  if(laser_model_type_ == LASER_MODEL_BEAM)
-  {  
-    if (localization_method_type_ == STANDARD)
-      method = "Standard";
-    if (localization_method_type_ == FIXED_THRESH)
-      method = "Fixed" + std::to_string(thresh_val_);
-    if (localization_method_type_ == ADAPTIVE)
-      method = "Adaptive" + std::to_string(Kp_val_);
-    if (cheat_)
-      method = method + "Cheat";
-    if (sigma_hit_behind_ != 0.4)
-      method = method + "Sigma" + std::to_string(sigma_hit_behind_);
-  }
-  
-  for(uint8_t i=1; i<100; i++)
+  if(save_file)
   {
-    pathProb = "/home/nicolas/catkin_ws/src/tests/python/b14f10_files_py2/new/" + info_path_ + method + "Prob" +  std::to_string(i) +  ".txt";
-    if(!existing_file_test(pathProb))
-    {
-      pathPos = "/home/nicolas/catkin_ws/src/tests/python/b14f10_files_py2/new/" + info_path_ + method + "Pos" + std::to_string(i) +  ".txt";
-      break;
+
+    std::string method(" ",20);
+    if (laser_model_type_ == LASER_MODEL_LIKELIHOOD_FIELD)
+      method = "Likelihood";
+    if(laser_model_type_ == LASER_MODEL_BEAM)
+    {  
+      if (localization_method_type_ == STANDARD)
+        method = "Standard";
+      if (localization_method_type_ == FIXED_THRESH)
+        method = "Fixed" + std::to_string(thresh_val_);
+      if (localization_method_type_ == ADAPTIVE)
+        method = "Adaptive" + std::to_string(Kp_val_);
+      // if (sigma_hit_behind_ != 0.4)
+      //   method = method + "Sigma" + std::to_string(sigma_hit_behind_);
     }
+    
+    for(uint8_t i=1; i<100; i++)
+    {
+      pathPos = info_path_ + method + "Pos" + std::to_string(i) +  ".txt";
+
+      if(!existing_file_test(pathPos))
+      {
+        
+        pathProb = info_path_ + method + "Prob" +  std::to_string(i) +  ".txt";
+        pathThresh = info_path_ + method + "Thresh" + std::to_string(i) +  ".txt";
+        break;
+      }
+    }
+
+    ofstream myfile;
+    myfile.open (pathProb.c_str());
+    myfile.close();
+
+    ofstream myfile2;
+    myfile2.open (pathPos.c_str());
+    myfile2.close();
+
+    ofstream myfile3;
+    myfile3.open (pathThresh.c_str());
+    myfile3.close();
+
   }
-
-  ofstream myfile;
-  myfile.open (pathProb.c_str());
-  myfile.close();
-
-  ofstream myfile2;
-  myfile2.open (pathPos.c_str());
-  myfile2.close();
-
-  // To create file or clear it if it already exists
-  // ofstream myfile3;
-  // myfile2.open ("/home/nicolas/catkin_ws/ThreshVal.txt");
-  // myfile2.close();
 
   return map;
 }
@@ -1398,12 +1403,6 @@ AmclNode::laserReceived(const sensor_msgs::LaserScanConstPtr& laser_scan)
       cloud_msg.header.stamp = ros::Time::now();
       cloud_msg.header.frame_id = global_frame_id_;
       cloud_msg.poses.resize(set->sample_count);
-      //////////////////////////////////7
-      // uint64_t nseconds = ros::Time::now().toNSec();
-      // ofstream myfile;
-      // myfile.open(pathPos.c_str(), ios::out | ios::app);
-      // myfile << nseconds;
-      ///////////////////////////////////
       for(int i=0;i<set->sample_count;i++)
       {
         cloud_msg.poses[i].position.x = set->samples[i].pose.v[0];
@@ -1412,15 +1411,7 @@ AmclNode::laserReceived(const sensor_msgs::LaserScanConstPtr& laser_scan)
         tf2::Quaternion q;
         q.setRPY(0, 0, set->samples[i].pose.v[2]);
         tf2::convert(q, cloud_msg.poses[i].orientation);
-        
-        ////////////////////////////////
-        // myfile << " " << set->samples[i].pose.v[0] << 
-        //           " " << set->samples[i].pose.v[1];
-        ////////////////////////////////
       }
-      ////////////////////////////////
-      // myfile << "\n";
-      ////////////////////////////////
       particlecloud_pub_.publish(cloud_msg);
     }
   }
@@ -1432,6 +1423,7 @@ AmclNode::laserReceived(const sensor_msgs::LaserScanConstPtr& laser_scan)
     int max_weight_hyp = -1;
     std::vector<amcl_hyp_t> hyps;
     hyps.resize(pf_->sets[pf_->current_set].cluster_count);
+
     for(int hyp_count = 0;
         hyp_count < pf_->sets[pf_->current_set].cluster_count; hyp_count++)
     {
@@ -1453,8 +1445,9 @@ AmclNode::laserReceived(const sensor_msgs::LaserScanConstPtr& laser_scan)
         max_weight = hyps[hyp_count].weight;
         max_weight_hyp = hyp_count;
       }
-    }
 
+    }
+   
     if(max_weight > 0.0)
     {
       ROS_DEBUG("Max weight pose: %.3f %.3f %.3f",
@@ -1514,15 +1507,17 @@ AmclNode::laserReceived(const sensor_msgs::LaserScanConstPtr& laser_scan)
                hyps[max_weight_hyp].pf_pose_mean.v[1],
                hyps[max_weight_hyp].pf_pose_mean.v[2]);
 
-      uint64_t nseconds = ros::Time::now().toNSec();
-      ofstream myfile;
-      myfile.open(pathPos.c_str(), ios::out | ios::app);
-      myfile << nseconds << " " << hyps[max_weight_hyp].pf_pose_mean.v[0] << 
-                            " " << hyps[max_weight_hyp].pf_pose_mean.v[1] <<
-                            " " << hyps[max_weight_hyp].pf_pose_mean.v[2] <<
-                            " " << hyps[max_weight_hyp].pf_pose_cov.m[1][1] <<
-                            " " << hyps[max_weight_hyp].pf_pose_cov.m[2][2] <<
-                            " " << hyps[max_weight_hyp].weight << "\n";
+      if(save_file)
+      {
+        uint64_t nseconds = ros::Time::now().toNSec();
+        ofstream myfile;
+        myfile.open(pathPos.c_str(), ios::out | ios::app);
+        myfile << nseconds << " " << hyps[max_weight_hyp].pf_pose_mean.v[0] << 
+                              " " << hyps[max_weight_hyp].pf_pose_mean.v[1] <<
+                              " " << hyps[max_weight_hyp].pf_pose_mean.v[2] <<
+                              " " << set->cov.m[2][2] <<
+                              " " << pf_->converged << "\n";
+      }
 
       // subtracting base to odom from map to base and send map to odom instead
       geometry_msgs::PoseStamped odom_to_map;

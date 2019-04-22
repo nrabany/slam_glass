@@ -13,13 +13,14 @@ using namespace std;
 /* Find lines in map. Everything is in map coordinates and scale */
 void map_hough_lines(map_t *map, uint16_t minPoints)
 {
-    Mat src(map->size_x, map->size_y, CV_8UC1, map->gridData);
+    Mat src(map->size_y, map->size_x, CV_8UC1, map->gridData);
 
     // Here get a binary image by thresholding (Filter to have only obstacles with p(glass)>0.1)
     uchar intensityThresh = 90;
     Mat srcThresh; // = src;
     threshold(src, srcThresh, intensityThresh, 255, THRESH_BINARY_INV);
-
+    // imshow("image with only lines", srcThresh);
+    // waitKey();
     //---------------------------------------------------------------------
 
     vector<Vec2f> lines;
@@ -59,7 +60,7 @@ void map_hough_lines(map_t *map, uint16_t minPoints)
             double theta_diff = abs(theta - map->lines[j].theta);
             double rho_add = abs(rho + map->lines[j].rho);
             // Here adjust parameters to group lines. !!rho_diff is in pixel!!
-            if ((rho_diff < 30 && theta_diff < 2 * M_PI / 180) || (rho_add < 30 && theta_diff - M_PI < 2 * M_PI / 180))
+            if ((rho_diff < 50 && theta_diff < 3 * M_PI / 180) || (rho_add < 50 && theta_diff - M_PI < 3 * M_PI / 180))
             {
                 new_group = false;
                 map->lines[j].rho = (map->lines[j].nb * map->lines[j].rho + rho)/(map->lines[j].nb+1);
@@ -93,9 +94,9 @@ void map_hough_lines(map_t *map, uint16_t minPoints)
             double a = cos(theta), b = sin(theta);
             double x0 = a * rho, y0 = b * rho;
             pt1.x = cvRound(x0 + map->size_y * (-b));
-            pt1.y = cvRound(y0 + map->size_x * (a));
+            pt1.y = cvRound(y0 + map->size_y * (a));
             pt2.x = cvRound(x0 - map->size_y * (-b));
-            pt2.y = cvRound(y0 - map->size_x * (a));
+            pt2.y = cvRound(y0 - map->size_y * (a));
             line(cdst, pt1, pt2, Scalar(0, 0, 255), 0.5, CV_AA);
             line(showMap, pt1, pt2, Scalar(0, 0, 255), 0.5, CV_AA);
             /*-----END DRAW LINES-----------------------------------------------------------------*/

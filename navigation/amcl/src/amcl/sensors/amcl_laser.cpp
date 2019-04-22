@@ -78,7 +78,6 @@ void AMCLLaser::SetModelBeam(double z_hit,
                              localization_method_t localization_method_type,
                              int thresh_val,
                              double Kp,
-                             bool cheat,
                              double sigma_hit_behind)
 {
   this->model_type = LASER_MODEL_BEAM;
@@ -92,7 +91,6 @@ void AMCLLaser::SetModelBeam(double z_hit,
   this->localization_method = localization_method_type;
   this->thresh_val = thresh_val;
   this->Kp = Kp;
-  this->cheat = cheat;
   this->sigma_hit_behind = sigma_hit_behind;
 }
 
@@ -174,7 +172,7 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
 
   vector<double> p_vector; 
 
-  p_vector.reserve(self->max_beams/2);
+  p_vector.reserve(self->max_beams);
 
   double psee, phit, obsAlpha;
 
@@ -182,22 +180,25 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
 
   double first_range, second_range, laser_range, prob, i_angle = -1;
 
-  ///////////////////////////////
-  // uint64_t nseconds = ros::Time::now().toNSec();
-  // ofstream myfile;
-  // myfile.open(pathProb.c_str(), ios::out | ios::app);
-  // myfile << nseconds;
-  //////////////////////////////////
-
+  //////////////////////////////////7
+  // uint64_t nseconds2 = ros::Time::now().toNSec();
+  // ofstream myfile2;
+  // myfile2.open(pathPosAll.c_str(), ios::out | ios::app);
+  // myfile2 << nseconds2;
+  /////////////////////////////////
   // Compute the sample weights
   for (j = 0; j < set->sample_count; j++)
   {
     sample = set->samples + j;
     pose = sample->pose;
     
+    ////////////////////////////////
+    // myfile2 << " " << pose.v[0] << " " << pose.v[1] << " " << pose.v[2];
+    ////////////////////////////////
+
     // Take account of the laser pose relative to the robot
     pose = pf_vector_coord_add(self->laser_pose, pose);
-
+    
     p = 1.0;
 
     step = (data->range_count - 1) / (self->max_beams - 1);
@@ -207,22 +208,36 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
     {
       obs_range = data->ranges[i][0];
       obs_bearing = data->ranges[i][1];
-      
+
+      if(j==0)
+        p_vector[index] = 0.0;
+
       if(!(obs_range == obs_range))
       {
         //cout << "obs==obs " << endl;
+        index += 1;
         continue;
       }
-      // Set to False for Standard Method. Set to True for glass Method
-      // bool CONSIDERING_GLASS = true;
+
+      // Here uncomment to consider only last third of the nb of beams
+      // if(i < data->range_count*2.0/3.0)
+      // {
+      //   p_vector[index] = 0.0;
+      //   index += 1;
+      //   continue;
+      // }
 
       // Variable used for Adaptive glass method. Allows to discard some measurement if they are at limit between glass and wall.
       bool obs_consider = true;
 
       // Compute the range according to the map
       if (self->localization_method == STANDARD)
-        map_range = map_calc_range(self->map, pose.v[0], pose.v[1],
-                                 pose.v[2] + obs_bearing, data->range_max);
+        // map_range = map_calc_range(self->map, pose.v[0], pose.v[1],
+        //                          pose.v[2] + obs_bearing, data->range_max);
+        cells_index = map_find_cells(self->map, pose.v[0], pose.v[1],
+                                   pose.v[2] + obs_bearing, data->range_max);
+        map_range = compute_range(self->map, pose.v[0], pose.v[1],
+                                cells_index.i_first, cells_index.j_first, data->range_max);
       
       if (self->localization_method == FIXED_THRESH)
       {
@@ -233,9 +248,11 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
         map_range_behind = compute_range(self->map, pose.v[0], pose.v[1],
                                          cells_index.i_second, cells_index.j_second, data->range_max);
         p_glass = get_glass_prob(self->map, cells_index.i_first, cells_index.j_first);
-        inc_angle = compute_incindent_angle(self->map, pose.v[2] + obs_bearing, cells_index.i_first, cells_index.j_first, 5);
+        inc_angle = compute_incindent_angle(self->map, pose.v[2] + obs_bearing, cells_index.i_first, cells_index.j_first, 20);
         std_glass = compute_std(inc_angle, map_range);
         p_can_see = compute_p_can_see_thresh(inc_angle, map_range, self->thresh_val);
+        if(p_glass==-1)
+          p_glass=0;
       }
       if (self->localization_method == ADAPTIVE)
       {
@@ -250,6 +267,8 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
         std_glass = compute_std(inc_angle, map_range);
         p_can_see = compute_p_can_see_thresh(inc_angle, map_range, angle_thresh);
         //p_can_see = compute_p_can_see_range(inc_angle, map_range, angle_thresh);
+        if(p_glass==-1)
+          p_glass=0;
 
         // In a window of nb_near pixels around the first obstacle's cell. Check if there is a non-glass obstacle.
         // If yes --> then set obs_consider to false and don't consider this measurement for adapting the threshold value in the Adaptive method. 
@@ -277,15 +296,13 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
       z = obs_range - map_range;
       if (self->localization_method == STANDARD)
         pz += self->z_hit * exp(-(z * z) / (2 * self->sigma_hit * self->sigma_hit));
-      if (self->localization_method == FIXED_THRESH && p_glass != -1)
+      if (self->localization_method == FIXED_THRESH)
       {
         pz += self->z_hit * exp(-(z * z) / (2 * self->sigma_hit * self->sigma_hit)) * (1 - p_glass);
         // Part 1b: good, but noisy, hit glass
-        pz += self->z_hit * exp(-(z * z) / (2 * self->sigma_hit * self->sigma_hit)) * p_glass * p_can_see;
+        pz += self->z_hit * exp(-(z * z) / (4 * self->sigma_hit * self->sigma_hit)) * p_glass * p_can_see;
 
         // Part 1c: good, but noisy, hit behind
-        if(self->cheat && p_glass > 0.4 && p_can_see<0.2 && obs_range==60.0)
-          map_range_behind = 60.0;
         z_behind = obs_range - map_range_behind;
         pz += self->z_hit * exp(-(z_behind * z_behind) / (2 * self->sigma_hit_behind * self->sigma_hit_behind)) * p_glass * (1 - p_can_see);
       }
@@ -293,15 +310,13 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
       {
         pz += self->z_hit * exp(-(z * z) / (2 * self->sigma_hit * self->sigma_hit)) * (1 - p_glass);
         // Part 1b: good, but noisy, hit glass
-        pz += self->z_hit * exp(-(z * z) / (2 * self->sigma_hit * self->sigma_hit)) * p_glass * p_can_see;
+        pz += self->z_hit * exp(-(z * z) / (4 * self->sigma_hit * self->sigma_hit)) * p_glass * p_can_see;
 
         // Part 1c: good, but noisy, hit behind
-        if(self->cheat && p_glass > 0.4 && p_can_see<0.2 && obs_range==60.0)
-          map_range_behind = 60.0;
         z_behind = obs_range - map_range_behind;
         pz += self->z_hit * exp(-(z_behind * z_behind) / (2 * self->sigma_hit_behind * self->sigma_hit_behind)) * p_glass * (1 - p_can_see);
       
-        // Adaptive nicolas-Jiang Method, a P controller is used for getting to the right value of angle_thresh.
+        // Adaptive Method, a P controller is used for getting to the right value of angle_thresh.
         uint64_t seconds = ros::Time::now().toSec();
         // if(seconds > 1547626969+60)
         //   Kp = Kp/5;
@@ -361,7 +376,7 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
           cout << "pz_hit_behind: " << self->z_hit * exp(-(z_behind * z_behind) / (2 * 4 * self->sigma_hit * self->sigma_hit)) * p_glass * (1 - p_can_see) << " " << endl;
           cout << "exp: " << exp(-(z_behind * z_behind) / (2 * 4 * self->sigma_hit * self->sigma_hit)) << " " << endl;
           cout << "p_glass: " << p_glass << " " << endl;
-          cout << "p_can_see " << p_can_see << " " << endl;
+          cout << "p_can_see: " << p_can_see << " " << endl;
         }
         else
         {
@@ -381,57 +396,51 @@ double AMCLLaser::BeamModel(AMCLLaserData *data, pf_sample_set_t *set)
       p_vector[index] = (p_vector[index]*j + pz) / (j+1);
       index += 1;
 
-      // Decrease wight of sensor model --> odometry gets stronger
-      // pz = 1.25 * pz;
-
-      //      p *= pz;
+      // p *= pz;
       // here we have an ad-hoc weighting scheme for combining beam probs
       // works well, though...
       p += pz * pz * pz;
 
-      // if(index==9+1 && CONSIDERING_GLASS)
+      // if(index==3+1 && self->localization_method != STANDARD)
       // {
       //   first_range = map_range;
       //   second_range = map_range_behind;
       //   laser_range = obs_range;
       //   prob = p_glass;
       //   i_angle = inc_angle;
+      //   // i_angle = obs_bearing;
+      //   if(i_angle>0)
+      //     i_angle = i_angle * 180.0 / 3.14;
       //   psee = p_can_see;
       //   phit = self->z_hit * exp(-(z_behind * z_behind) / (2 * self->sigma_hit * self->sigma_hit));
       // }
     }
 
-    sample->weight *= p;
+    sample->weight *= pow(p, 0.8);
     total_weight += sample->weight;
-    ////////////////////////
-    // myfile << " " << sample->weight;
-    ///////////////////////////
+
   }
   // cout << "1st: " << first_range << ", 2nd: " << second_range << ", laser: " << laser_range << " " << endl;
   // cout << "p_glass: " << prob << ", inc angle: " << i_angle << " " << endl;
-  
-  // Write pz to file
-  uint64_t nseconds = ros::Time::now().toNSec();
-  ofstream myfile;
-  myfile.open(pathProb.c_str(), ios::out | ios::app);
-  myfile << nseconds;
-  for(int ii=0; ii<self->max_beams; ii++)
+  // cout << "from cells: " << first_range << ", from range: " << rangeTestKeep << " " << endl;
+
+  if(save_file)
   {
-    myfile << " " << p_vector[ii];
+    //Write pz to file
+    uint64_t nseconds = ros::Time::now().toNSec();
+    ofstream myfile;
+    myfile.open(pathProb.c_str(), ios::out | ios::app);
+    myfile << nseconds;
+    for(int ii=0; ii<self->max_beams; ii++)
+    {
+      myfile << " " << p_vector[ii];
+    }
+    myfile << "\n";
+    
+    ofstream myfile2;
+    myfile2.open(pathThresh, ios::out | ios::app);
+    myfile2 << nseconds << " " << angle_thresh << "\n";
   }
-  myfile << "\n";
-  
-
-  ////////////////77
-  //myfile << "\n";
-  //////////////////////
-
-  // ofstream myfile2;
-  // myfile2.open("/home/nicolas/catkin_ws/ThreshVal.txt", ios::out | ios::app);
-  // myfile2 << nseconds << " " << angle_thresh << "\n";
-
-  // cout << angle_thresh << " " << endl;
-  // cout << ros::Time::now().toSec() - 1547626969 << " = p_can_see: " << psee << " , phit_behind: "<< phit << " , inc angle: " << i_angle/M_PI*180.0 << " , angleT: " << angle_thresh << " " << endl;
 
   return (total_weight);
 }

@@ -42,6 +42,10 @@ uint64_t nb_pz;
 double angle_thresh;
 std::string pathProb(150, ' ');
 std::string pathPos(150, ' '); 
+std::string pathThresh(150, ' ');
+bool save_file;
+
+double timeCheck;
 
 typedef enum
 {
@@ -88,7 +92,6 @@ class AMCLLaser : public AMCLSensor
                             localization_method_t localization_method_type,
                             int thresh_val,
                             double Kp,
-                            bool cheat,
                             double sigma_hit_behind);
 
   public: void SetModelLikelihoodField(double z_hit,
@@ -172,7 +175,6 @@ class AMCLLaser : public AMCLSensor
   private: localization_method_t localization_method;
   private: int thresh_val;
   private: double Kp;
-  private: bool cheat;
   private: double sigma_hit_behind;
 };
 
